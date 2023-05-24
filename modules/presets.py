@@ -42,7 +42,7 @@ CONCURRENT_COUNT = 100 # 允许同时使用的用户数量
 SIM_K = 5
 INDEX_QUERY_TEMPRATURE = 1.0
 
-CHUANHU_TITLE = i18n("川虎Chat 🚀")
+CHUANHU_TITLE = i18n("Mr.5️⃣ AI-GPT 🤖")
 
 CHUANHU_DESCRIPTION = i18n("由Bilibili [土川虎虎虎](https://space.bilibili.com/29125536)、[明昭MZhao](https://space.bilibili.com/24807452) 和 [Keldos](https://github.com/Keldos-Li) 开发<br />访问川虎Chat的 [GitHub项目](https://github.com/GaiZhenbiao/ChuanhuChatGPT) 下载最新版脚本")
 
@@ -63,6 +63,9 @@ SUMMARIZE_PROMPT = "你是谁？我们刚才聊了什么？"  # 总结对话时�
 ONLINE_MODELS = [
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-0301",
+]
+
+LOCAL_MODELS = [
     "gpt-4",
     "gpt-4-0314",
     "gpt-4-32k",
@@ -74,9 +77,6 @@ ONLINE_MODELS = [
     "yuanai-1.0-rhythm_poems",
     "minimax-abab4-chat",
     "minimax-abab5-chat",
-]
-
-LOCAL_MODELS = [
     "chatglm-6b",
     "chatglm-6b-int4",
     "chatglm-6b-int4-qe",
@@ -117,9 +117,9 @@ DEFAULT_TOKEN_LIMIT = 3000 # 默认的token上限
 REDUCE_TOKEN_FACTOR = 0.5 # 与模型token上限想乘，得到目标token数。减少token占用时，将token占用减少到目标token数以下。
 
 REPLY_LANGUAGES = [
-    "简体中文",
-    "繁體中文",
     "English",
+    "繁體中文",
+    "简体中文",
     "日本語",
     "Español",
     "Français",

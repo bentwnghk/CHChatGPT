@@ -157,7 +157,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                                     gr.Markdown(i18n("默认保存于history文件夹"))
                             with gr.Row():
                                 with gr.Column():
-                                    downloadFile = gr.File(interactive=True)
+                                    downloadFile = gr.File(label=i18n("上/下载对话记录文件"), interactive=True)
 
                 with gr.Tab(label=i18n("高级")):
                     gr.Markdown(i18n("# ⚠️ 务必谨慎更改 ⚠️\n\n如果无法使用请恢复默认设置"))
@@ -458,7 +458,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
 
 logging.info(
     colorama.Back.GREEN
-    + "\n川虎的温馨提示：访问 http://localhost:7860 查看界面"
+    + "\n访问 http://localhost:7860 查看界面"
     + colorama.Style.RESET_ALL
 )
 # 默认开启本地服务器，默认可以直接从IP访问，默认不创建公开分享链接
