@@ -13,16 +13,108 @@ import pathlib
 
 from tqdm import tqdm
 import colorama
-from duckduckgo_search import ddg
+from googlesearch import search
 import asyncio
 import aiohttp
 from enum import Enum
 
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.callbacks.manager import BaseCallbackManager
+
+from typing import Any, Dict, List, Optional, Union
+
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.input import print_text
+from langchain.schema import AgentAction, AgentFinish, LLMResult
+from threading import Thread, Condition
+from collections import deque
+
 from ..presets import *
-from ..llama_func import *
+from ..index_func import *
 from ..utils import *
 from .. import shared
 from ..config import retrieve_proxy
+
+class CallbackToIterator:
+    def __init__(self):
+        self.queue = deque()
+        self.cond = Condition()
+        self.finished = False
+
+    def callback(self, result):
+        with self.cond:
+            self.queue.append(result)
+            self.cond.notify()  # Wake up the generator.
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self.cond:
+            while not self.queue and not self.finished:  # Wait for a value to be added to the queue.
+                self.cond.wait()
+            if not self.queue:
+                raise StopIteration()
+            return self.queue.popleft()
+
+    def finish(self):
+        with self.cond:
+            self.finished = True
+            self.cond.notify()  # Wake up the generator if it's waiting.
+
+def get_action_description(text):
+    match = re.search('```(.*?)```', text, re.S)
+    json_text = match.group(1)
+    # 把json转化为python字典
+    json_dict = json.loads(json_text)
+    # 提取'action'和'action_input'的值
+    action_name = json_dict['action']
+    action_input = json_dict['action_input']
+    if action_name != "Final Answer":
+        return f'<p style="font-size: smaller; color: gray;">{action_name}: {action_input}</p>'
+    else:
+        return ""
+
+class ChuanhuCallbackHandler(BaseCallbackHandler):
+
+    def __init__(self, callback) -> None:
+        """Initialize callback handler."""
+        self.callback = callback
+
+    def on_agent_action(
+        self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
+    ) -> Any:
+        self.callback(get_action_description(action.log))
+
+    def on_tool_end(
+        self,
+        output: str,
+        color: Optional[str] = None,
+        observation_prefix: Optional[str] = None,
+        llm_prefix: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        """If not the final action, print out observation."""
+        # if observation_prefix is not None:
+        #     self.callback(f"\n\n{observation_prefix}")
+        # self.callback(output)
+        # if llm_prefix is not None:
+        #     self.callback(f"\n\n{llm_prefix}")
+        if observation_prefix is not None:
+            logging.info(observation_prefix)
+        self.callback(output)
+        if llm_prefix is not None:
+            logging.info(llm_prefix)
+
+    def on_agent_finish(
+        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        # self.callback(f"{finish.log}\n\n")
+        logging.info(finish.log)
+
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Run on new LLM token. Only available when streaming is enabled."""
+        self.callback(token)
 
 
 class ModelType(Enum):
@@ -35,6 +127,7 @@ class ModelType(Enum):
     MOSS = 5
     YuanAI = 6
     Minimax = 7
+    ChuanhuAgent = 8
 
     @classmethod
     def get_type(cls, model_name: str):
@@ -56,6 +149,8 @@ class ModelType(Enum):
             model_type = ModelType.YuanAI
         elif "minimax" in model_name_lower:
             model_type = ModelType.Minimax
+        elif "川虎助理" in model_name_lower:
+            model_type = ModelType.ChuanhuAgent
         else:
             model_type = ModelType.Unknown
         return model_type
@@ -149,6 +244,8 @@ class BaseLLMModel:
 
         stream_iter = self.get_answer_stream_iter()
 
+        if display_append:
+            display_append = "<hr>" +display_append
         for partial_text in stream_iter:
             chatbot[-1] = (chatbot[-1][0], partial_text + display_append)
             self.all_token_counts[-1] += 1
@@ -181,13 +278,33 @@ class BaseLLMModel:
         status_text = self.token_message()
         return chatbot, status_text
 
-    def handle_file_upload(self, files, chatbot):
+    def handle_file_upload(self, files, chatbot, language):
         """if the model accepts multi modal input, implement this function"""
         status = gr.Markdown.update()
         if files:
-            construct_index(self.api_key, file_src=files)
-            status = "索引构建完成"
+            index = construct_index(self.api_key, file_src=files)
+            status = i18n("索引构建完成")
         return gr.Files.update(), chatbot, status
+
+    def summarize_index(self, files, chatbot, language):
+        status = gr.Markdown.update()
+        if files:
+            index = construct_index(self.api_key, file_src=files)
+            status = i18n("总结完成")
+            logging.info(i18n("生成内容总结中……"))
+            os.environ["OPENAI_API_KEY"] = self.api_key
+            from langchain.chains.summarize import load_summarize_chain
+            from langchain.prompts import PromptTemplate
+            from langchain.chat_models import ChatOpenAI
+            from langchain.callbacks import StdOutCallbackHandler
+            prompt_template = "Write a concise summary of the following:\n\n{text}\n\nCONCISE SUMMARY IN " + language + ":"
+            PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
+            llm = ChatOpenAI()
+            chain = load_summarize_chain(llm, chain_type="map_reduce", return_intermediate_steps=True, map_prompt=PROMPT, combine_prompt=PROMPT)
+            summary = chain({"input_documents": list(index.docstore.__dict__["_dict"].values())}, return_only_outputs=True)["output_text"]
+            print(i18n("总结") + f": {summary}")
+            chatbot.append([i18n("上传了")+str(len(files))+"个文件", summary])
+        return chatbot, status
 
     def prepare_inputs(self, real_inputs, use_websearch, files, reply_language, chatbot):
         fake_inputs = None
@@ -195,53 +312,20 @@ class BaseLLMModel:
         limited_context = False
         fake_inputs = real_inputs
         if files:
-            from llama_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
-            from llama_index.indices.query.schema import QueryBundle
             from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-            from langchain.chat_models import ChatOpenAI
-            from llama_index import (
-                GPTSimpleVectorIndex,
-                ServiceContext,
-                LangchainEmbedding,
-                OpenAIEmbedding,
-            )
+            from langchain.vectorstores.base import VectorStoreRetriever
             limited_context = True
             msg = "加载索引中……"
             logging.info(msg)
-            # yield chatbot + [(inputs, "")], msg
             index = construct_index(self.api_key, file_src=files)
             assert index is not None, "获取索引失败"
             msg = "索引获取成功，生成回答中……"
             logging.info(msg)
-            if local_embedding or self.model_type != ModelType.OpenAI:
-                embed_model = LangchainEmbedding(HuggingFaceEmbeddings(model_name = "sentence-transformers/distiluse-base-multilingual-cased-v2"))
-            else:
-                embed_model = OpenAIEmbedding()
-            # yield chatbot + [(inputs, "")], msg
             with retrieve_proxy():
-                prompt_helper = PromptHelper(
-                    max_input_size=4096,
-                    num_output=5,
-                    max_chunk_overlap=20,
-                    chunk_size_limit=600,
-                )
-                from llama_index import ServiceContext
-
-                service_context = ServiceContext.from_defaults(
-                    prompt_helper=prompt_helper, embed_model=embed_model
-                )
-                query_object = GPTVectorStoreIndexQuery(
-                    index.index_struct,
-                    service_context=service_context,
-                    similarity_top_k=5,
-                    vector_store=index._vector_store,
-                    docstore=index._docstore,
-                    response_synthesizer=None
-                )
-                query_bundle = QueryBundle(real_inputs)
-                nodes = query_object.retrieve(query_bundle)
-            reference_results = [n.node.text for n in nodes]
-            reference_results = add_source_numbers(reference_results, use_source=False)
+                retriever = VectorStoreRetriever(vectorstore=index, search_type="similarity_score_threshold",search_kwargs={"k":6, "score_threshold": 0.5})
+                relevant_documents = retriever.get_relevant_documents(real_inputs)
+            reference_results = [[d.page_content.strip("�"), os.path.basename(d.metadata["source"])] for d in relevant_documents]
+            reference_results = add_source_numbers(reference_results)
             display_append = add_details(reference_results)
             display_append = "\n\n" + "".join(display_append)
             real_inputs = (
@@ -252,15 +336,15 @@ class BaseLLMModel:
             )
         elif use_websearch:
             limited_context = True
-            search_results = ddg(real_inputs, max_results=5)
+            search_results = [i for i in search(real_inputs, advanced=True)]
             reference_results = []
             for idx, result in enumerate(search_results):
                 logging.debug(f"搜索结果{idx + 1}：{result}")
-                domain_name = urllib3.util.parse_url(result["href"]).host
-                reference_results.append([result["body"], result["href"]])
+                domain_name = urllib3.util.parse_url(result.url).host
+                reference_results.append([result.description, result.url])
                 display_append.append(
                     # f"{idx+1}. [{domain_name}]({result['href']})\n"
-                    f"<li><a href=\"{result['href']}\" target=\"_blank\">{domain_name}</a></li>\n"
+                    f"<li><a href=\"{result.url}\" target=\"_blank\">{domain_name}</a></li>\n"
                 )
             reference_results = add_source_numbers(reference_results)
             display_append = "<ol>\n\n" + "".join(display_append) + "</ol>"

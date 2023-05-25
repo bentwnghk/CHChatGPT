@@ -58,8 +58,6 @@ APPEARANCE_SWITCHER = """
 </div>
 """
 
-SUMMARIZE_PROMPT = "你是谁？我们刚才聊了什么？"  # 总结对话时的 prompt
-
 ONLINE_MODELS = [
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-0301",
@@ -70,6 +68,8 @@ LOCAL_MODELS = [
     "gpt-4-0314",
     "gpt-4-32k",
     "gpt-4-32k-0314",
+    "川虎助理",
+    "川虎助理 Pro",
     "xmchat",
     "yuanai-1.0-base_10B",
     "yuanai-1.0-translate",
@@ -165,6 +165,12 @@ Given the new context, refine the original answer to better
 Reply in {reply_language}
 If the context isn't useful, return the original answer.
 """
+
+SUMMARIZE_PROMPT = """Write a concise summary of the following:
+
+{text}
+
+CONCISE SUMMARY IN 中文:"""
 
 ALREADY_CONVERTED_MARK = "<!-- ALREADY CONVERTED BY PARSER. -->"
 

@@ -15,7 +15,6 @@ from modules.models.models import get_model
 
 gr.Chatbot._postprocess_chat_messages = postprocess_chat_messages
 gr.Chatbot.postprocess = postprocess
-PromptHelper.compact_text_chunks = compact_text_chunks
 
 with open("assets/custom.css", "r", encoding="utf-8") as f:
     customCSS = f.read()
@@ -98,6 +97,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                     )
                     index_files = gr.Files(label=i18n("上传索引文件"), type="file")
                     two_column = gr.Checkbox(label=i18n("双栏pdf"), value=advance_docs["pdf"].get("two_column", False))
+                    summarize_btn = gr.Button(i18n("总结"))
                     # TODO: 公式ocr
                     # formula_ocr = gr.Checkbox(label=i18n("识别公式"), value=advance_docs["pdf"].get("formula_ocr", False))
 
@@ -333,7 +333,8 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
     submitBtn.click(**transfer_input_args).then(**chatgpt_predict_args, api_name="predict").then(**end_outputing_args)
     submitBtn.click(**get_usage_args)
 
-    index_files.change(handle_file_upload, [current_model, index_files, chatbot], [index_files, chatbot, status_display])
+    index_files.change(handle_file_upload, [current_model, index_files, chatbot, language_select_dropdown], [index_files, chatbot, status_display])
+    summarize_btn.click(handle_summarize_index, [current_model, index_files, chatbot, language_select_dropdown], [chatbot, status_display])
 
     emptyBtn.click(
         reset,

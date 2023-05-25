@@ -22,7 +22,7 @@ from enum import Enum
 import uuid
 
 from ..presets import *
-from ..llama_func import *
+from ..index_func import *
 from ..utils import *
 from .. import shared
 from ..config import retrieve_proxy, usage_limit
@@ -494,7 +494,7 @@ class XMChat(BaseLLMModel):
         limited_context = False
         return limited_context, fake_inputs, display_append, real_inputs, chatbot
 
-    def handle_file_upload(self, files, chatbot):
+    def handle_file_upload(self, files, chatbot, language):
         """if the model accepts multi modal input, implement this function"""
         if files:
             for file in files:
@@ -557,6 +557,7 @@ def get_model(
         config.local_embedding = True
     # del current_model.model
     model = None
+    chatbot = gr.Chatbot.update(label=model_name)
     try:
         if model_type == ModelType.OpenAI:
             logging.info(f"正在加载OpenAI模型: {model_name}")
@@ -607,10 +608,12 @@ def get_model(
             if os.environ.get("MINIMAX_API_KEY") != "":
                 access_key = os.environ.get("MINIMAX_API_KEY")
             model = MiniMax_Client(model_name, api_key=access_key, user_name=user_name, system_prompt=system_prompt)
+        elif model_type == ModelType.ChuanhuAgent:
+            from .ChuanhuAgent import ChuanhuAgent_Client
+            model = ChuanhuAgent_Client(model_name, access_key, user_name=user_name)
         elif model_type == ModelType.Unknown:
             raise ValueError(f"未知模型: {model_name}")
         logging.info(msg)
-        chatbot = gr.Chatbot.update(label=model_name)
     except Exception as e:
         logging.error(e)
         msg = f"{STANDARD_ERROR_MSG}: {e}"
