@@ -15,7 +15,6 @@ from PIL import Image
 
 from tqdm import tqdm
 import colorama
-from googlesearch import search
 import asyncio
 import aiohttp
 from enum import Enum
