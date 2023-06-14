@@ -46,28 +46,21 @@ CHUANHU_TITLE = i18n("Mr.5️⃣ AI-GPT 🤖")
 
 CHUANHU_DESCRIPTION = i18n("由Bilibili [土川虎虎虎](https://space.bilibili.com/29125536)、[明昭MZhao](https://space.bilibili.com/24807452) 和 [Keldos](https://github.com/Keldos-Li) 开发<br />访问川虎Chat的 [GitHub项目](https://github.com/GaiZhenbiao/ChuanhuChatGPT) 下载最新版脚本")
 
-FOOTER = """<div class="versions">{versions}</div>"""
-
-APPEARANCE_SWITCHER = """
-<div style="display: flex; justify-content: space-between;">
-<span style="margin-top: 4px !important;">"""+ i18n("切换亮暗色主题")  + """</span>
-<span><label class="apSwitch" for="checkbox">
-    <input type="checkbox" id="checkbox">
-    <div class="apSlider"></div>
-</label></span>
-</div>
-"""
 
 ONLINE_MODELS = [
     "gpt-3.5-turbo",
+    "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-16k",
     "gpt-3.5-turbo-0301",
 ]
 
 LOCAL_MODELS = [
     "gpt-4",
     "gpt-4-0314",
+    "gpt-4-0613",
     "gpt-4-32k",
     "gpt-4-32k-0314",
+    "gpt-4-32k-0613",
     "川虎助理",
     "川虎助理 Pro",
     "xmchat",
@@ -105,11 +98,15 @@ for dir_name in os.listdir("models"):
 
 MODEL_TOKEN_LIMIT = {
     "gpt-3.5-turbo": 4096,
+    "gpt-3.5-turbo-16k": 16384,
     "gpt-3.5-turbo-0301": 4096,
+    "gpt-3.5-turbo-0613": 4096,
     "gpt-4": 8192,
     "gpt-4-0314": 8192,
+    "gpt-4-0613": 8192,
     "gpt-4-32k": 32768,
-    "gpt-4-32k-0314": 32768
+    "gpt-4-32k-0314": 32768,
+    "gpt-4-32k-0613": 32768
 }
 
 TOKEN_OFFSET = 1000 # 模型的token上限减去这个值，得到软上限。到达软上限之后，自动尝试减少token占用。
@@ -238,4 +235,6 @@ small_and_beautiful_theme = gr.themes.Soft(
         block_title_background_fill_dark="*primary_900",
         block_label_background_fill_dark="*primary_900",
         input_background_fill="#F6F6F6",
+        chatbot_code_background_color="*neutral_950",
+        chatbot_code_background_color_dark="*neutral_950",
     )

@@ -18,7 +18,6 @@ __all__ = [
     "log_level",
     "advance_docs",
     "update_doc_config",
-    "render_latex",
     "usage_limit",
     "multi_api_key",
     "server_name",
@@ -43,11 +42,11 @@ hide_history_when_not_logged_in = config.get("hide_history_when_not_logged_in", 
 
 if os.path.exists("api_key.txt"):
     logging.info("检测到api_key.txt文件，正在进行迁移...")
-    with open("api_key.txt", "r") as f:
+    with open("api_key.txt", "r", encoding="utf-8") as f:
         config["openai_api_key"] = f.read().strip()
     os.rename("api_key.txt", "api_key(deprecated).txt")
     with open("config.json", "w", encoding='utf-8') as f:
-        json.dump(config, f, indent=4)
+        json.dump(config, f, indent=4, ensure_ascii=False)
 
 if os.path.exists("auth.json"):
     logging.info("检测到auth.json文件，正在进行迁移...")
@@ -63,7 +62,7 @@ if os.path.exists("auth.json"):
     config["users"] = auth_list
     os.rename("auth.json", "auth(deprecated).json")
     with open("config.json", "w", encoding='utf-8') as f:
-        json.dump(config, f, indent=4)
+        json.dump(config, f, indent=4, ensure_ascii=False)
 
 ## 处理docker if we are running in Docker
 dockerflag = config.get("dockerflag", False)
@@ -82,12 +81,6 @@ os.environ["MINIMAX_API_KEY"] = minimax_api_key
 minimax_group_id = config.get("minimax_group_id", "")
 os.environ["MINIMAX_GROUP_ID"] = minimax_group_id
 
-render_latex = config.get("render_latex", True)
-
-if render_latex:
-    os.environ["RENDER_LATEX"] = "yes"
-else:
-    os.environ["RENDER_LATEX"] = "no"
 
 usage_limit = os.environ.get("USAGE_LIMIT", config.get("usage_limit", 120))
 
