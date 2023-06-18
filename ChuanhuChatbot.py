@@ -141,8 +141,11 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                                         choices=get_history_names(plain=True),
                                         multiselect=False
                                     )
-                                with gr.Column(scale=1):
-                                    historyRefreshBtn = gr.Button(i18n("🔄 刷新"))
+                                with gr.Row():
+                                    with gr.Column(min_width=42, scale=1):
+                                        historyRefreshBtn = gr.Button(i18n("🔄 刷新"))
+                                    with gr.Column(min_width=42, scale=1):
+                                        historyDeleteBtn = gr.Button(i18n("🗑️ 删除"))
                             with gr.Row():
                                 with gr.Column(scale=6):
                                     saveFileName = gr.Textbox(
@@ -323,6 +326,10 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
         outputs=[saveFileName, systemPromptTxt, chatbot]
     )
 
+    refresh_history_args = dict(
+        fn=get_history_names, inputs=[gr.State(False), user_name], outputs=[historyFileSelectDropdown]
+    )
+
 
     # Chatbot
     cancelBtn.click(interrupt, [current_model], [])
@@ -425,7 +432,16 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
         downloadFile,
         show_progress=True,
     )
-    historyRefreshBtn.click(get_history_names, [gr.State(False), user_name], [historyFileSelectDropdown])
+    historyRefreshBtn.click(**refresh_history_args)
+    historyDeleteBtn.click(delete_chat_history, [current_model, historyFileSelectDropdown, user_name], [status_display, historyFileSelectDropdown, chatbot], _js='''function showConfirmationDialog(a, b, c) {
+  if (b != "") {
+    var result = confirm("你真的要删除 " + b + " 吗？");
+    if (result) {
+        return [a, b, c];
+    }
+  }
+  return [a, "CANCELED", c];
+}''')
     historyFileSelectDropdown.change(**load_history_from_file_args)
     downloadFile.change(upload_chat_history, [current_model, downloadFile, user_name], [saveFileName, systemPromptTxt, chatbot])
 
