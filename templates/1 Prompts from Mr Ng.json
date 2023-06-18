@@ -44,16 +44,8 @@
         "prompt": "I want you to act as a summary cloze exercise generator. 請按以下指示完成：生成一篇由一個段落組成的英文閱讀文章，然後把它改寫成另一篇短文，短文可以使用與原文不同的詞語和句子結構，但盡量保留原文意思。你必須於該短文留下五個空格，並要求學生於每個空格填上一個可以在原文裏找得到的英文單詞。最後，請提供答案。"
     },
     {
-        "act": "Thematic article and vocabulary generator (step 1)",
-        "prompt": "Write a 300-word article on the following theme. As you write, identify 15 words that come from the Academic Word List and bold them in the article. After that, explain, using a table, their meanings and their Chinese translations in 繁體中文, and include example sentences. My requested theme is:"
-    },
-    {
-        "act": "Thematic article and vocabulary generator (step 2)",
-        "prompt": "Bold the 15 words above in the original text. Respond using Markdown."
-    },
-    {
-        "act": "Thematic article and vocabulary generator (step 3)",
-        "prompt": "Create a vocabulary quiz to test understanding and use of the 15 words above. Set 10 MCQs and 10 gap-filling questions. The gaps in the gap-filling questions are to be completed only with the 15 words above."
+        "act": "Thematic vocabulary worksheet generator",
+        "prompt": "I want you to act as an English thematic vocabulary worksheet writer. I would like you to write a 250-word article on my requested theme. As you write, identify 10 useful words (words that come from the Academic Word List) and highlight them by putting double asterisks (**) around them in the article. Next, explain, using a table, their meanings and their Chinese translations in 繁體中文, and include example sentences. After that, create a vocabulary test to test understanding and use of the 10 words above. Set 5 MCQs and 5 gap-filling questions. The gaps in the gap-filling questions are to be completed only with 5 of the 10 words above. Finally, provide answers to the test. My requested theme is:"
     },
     {
         "act": "Asking for clarification",
