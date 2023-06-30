@@ -38,6 +38,14 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
         status_display = gr.Markdown(get_geoip(), elem_id="status_display")
     with gr.Row(elem_id="float_display"):
         user_info = gr.Markdown(value="getting user info...", elem_id="user_info")
+        update_info = gr.HTML(get_html("update.html").format(
+            current_version=repo_html(),
+            version_time=version_time(),
+            cancel_btn=i18n("取消"),
+            update_btn=i18n("更新"),
+            seenew_btn=i18n("详情"),
+            ok_btn=i18n("好"),
+            ), visible=check_update)
 
     with gr.Row().style(equal_height=True):
         with gr.Column(scale=5):
@@ -266,6 +274,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         )
                         changeProxyBtn = gr.Button(i18n("🔄 设置代理地址"))
                         default_btn = gr.Button(i18n("🔙 恢复默认设置"))
+                    checkUpdateBtn = gr.Button(i18n("🔄 检查更新..."), visible=check_update)
 
     gr.Markdown(CHUANHU_DESCRIPTION, elem_id="description")
     gr.HTML(get_html("footer.html").format(versions=versions_html()), elem_id="footer")
@@ -465,6 +474,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
         [status_display],
         show_progress=True,
     )
+    checkUpdateBtn.click(fn=None, _js='()=>{manualCheckUpdate();}')
 
 logging.info(
     colorama.Back.GREEN

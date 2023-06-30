@@ -18,15 +18,19 @@ var apSwitch = null;
 var messageBotDivs = null;
 var loginUserForm = null;
 var logginUser = null;
+var updateToast = null;
 
 var userLogged = false;
 var usernameGotten = false;
 var historyLoaded = false;
+var updateInfoGotten = false;
+var isLatestVersion = localStorage.getItem('isLatestVersion') || false;
 
 var ga = document.getElementsByTagName("gradio-app");
 var targetNode = ga[0];
 var isInIframe = (window.self !== window.top);
 var language = navigator.language.slice(0,2);
+var currentTime = new Date().getTime();
 
 var forView_i18n = {
     'zh': "仅供查看",
@@ -49,6 +53,12 @@ var deleteConfirm_i18n_suff = {
 var deleteConfirm_msg_pref = "Are you sure you want to delete ";
 var deleteConfirm_msg_suff = " ?";
 
+var usingLatest_i18n = {
+    'zh': "您使用的就是最新版！",
+    'en': "You are using the latest version!",
+    'ja': "最新バージョンを使用しています！",
+};
+
 // gradio 页面加载好了么??? 我能动你的元素了么??
 function gradioLoaded(mutations) {
     for (var i = 0; i < mutations.length; i++) {
@@ -61,6 +71,7 @@ function gradioLoaded(mutations) {
             chatbot = document.querySelector('#chuanhu_chatbot');
             chatbotWrap = document.querySelector('#chuanhu_chatbot > .wrap');
             apSwitch = document.querySelector('.apSwitch input[type="checkbox"]');
+            updateToast = document.querySelector("#toast-update");
 
             if (loginUserForm) {
                 localStorage.setItem("userLogged", true);
@@ -87,6 +98,13 @@ function gradioLoaded(mutations) {
                     loadHistoryHtml();
                 }
                 setChatbotScroll();
+            }
+            if (updateToast) {
+                const lastCheckTime = localStorage.getItem('lastCheckTime') || 0;
+                const longTimeNoCheck = currentTime - lastCheckTime > 3 * 24 * 60 * 60 * 1000;
+                if (longTimeNoCheck && !updateInfoGotten && !isLatestVersion || isLatestVersion && !updateInfoGotten ) {
+                    updateLatestVersion();
+                }
             }
         }
     }
@@ -496,6 +514,98 @@ function clearHistoryHtml() {
     }
 }
 
+var showingUpdateInfo = false;
+async function getLatestRelease() {
+    try {
+        const response = await fetch('https://api.github.com/repos/gaizhenbiao/chuanhuchatgpt/releases/latest');
+        if (!response.ok) {
+            console.log(`Error: ${response.status} - ${response.statusText}`);
+            updateInfoGotten = true;
+            return null;
+          }
+        const data = await response.json();
+        updateInfoGotten = true;
+        return data;
+    } catch (error) {
+        console.log(`Error: ${error}`);
+        updateInfoGotten = true;
+        return null;
+    }
+}
+async function updateLatestVersion() {
+    const currentVersionElement = document.getElementById('current-version');
+    const latestVersionElement = document.getElementById('latest-version-title');
+    const releaseNoteElement = document.getElementById('release-note-content');
+    const currentVersion = currentVersionElement.textContent;
+    const versionTime = document.getElementById('version-time').innerText;
+    const localVersionTime = versionTime !== "unknown" ? (new Date(versionTime)).getTime() : 0;
+    // const currentVersion = '20230619'; // for debugging
+    updateInfoGotten = true; //无论成功与否都只执行一次，否则容易api超限...
+    try {
+        const data = await getLatestRelease();
+        const releaseNote = data.body;
+        if (releaseNote) {
+            releaseNoteElement.innerHTML = marked.parse(releaseNote);
+        }
+        const latestVersion = data.tag_name;
+        const latestVersionTime = (new Date(data.published_at)).getTime();
+        if (latestVersionTime) {
+            if (localVersionTime < latestVersionTime) {
+                latestVersionElement.textContent = latestVersion;
+                console.log(`New version ${latestVersion} found!`);
+                if (!isInIframe) {openUpdateToast();}      
+            } else {
+                noUpdate();
+            }
+            currentTime = new Date().getTime();
+            localStorage.setItem('lastCheckTime', currentTime);
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
+function getUpdate() {
+    window.open('https://github.com/gaizhenbiao/chuanhuchatgpt/releases/latest', '_blank');
+    closeUpdateToast();
+}
+function cancelUpdate() {
+    closeUpdateToast();
+}
+function openUpdateToast() {
+    showingUpdateInfo = true;
+    setUpdateWindowHeight();
+}
+function closeUpdateToast() {
+    updateToast.style.setProperty('top', '-500px');
+    showingUpdateInfo = false;
+}
+function manualCheckUpdate() {
+    openUpdateToast();
+    updateLatestVersion();
+    currentTime = new Date().getTime();
+    localStorage.setItem('lastCheckTime', currentTime);
+}
+function noUpdate() {
+    localStorage.setItem('isLatestVersion', 'true');
+    isLatestVersion = true;
+    const versionInfoElement = document.getElementById('version-info-title');
+    const releaseNoteWrap = document.getElementById('release-note-wrap');
+    const gotoUpdateBtn = document.getElementById('goto-update-btn');
+    const closeUpdateBtn = document.getElementById('close-update-btn');
+
+    versionInfoElement.textContent = usingLatest_i18n.hasOwnProperty(language) ? usingLatest_i18n[language] : usingLatest_i18n['en'];
+    releaseNoteWrap.style.setProperty('display', 'none');
+    gotoUpdateBtn.classList.add('hideK');
+    closeUpdateBtn.classList.remove('hideK');
+}
+function setUpdateWindowHeight() {
+    if (!showingUpdateInfo) {return;}
+    const scrollPosition = window.scrollY;
+    // const originalTop = updateToast.style.getPropertyValue('top');
+    const resultTop = scrollPosition - 20 + 'px';
+    updateToast.style.setProperty('top', resultTop);
+}
+    
 // 监视页面内部 DOM 变动
 var observer = new MutationObserver(function (mutations) {
     gradioLoaded(mutations);
@@ -508,7 +618,7 @@ window.addEventListener("DOMContentLoaded", function () {
     historyLoaded = false;
 });
 window.addEventListener('resize', setChatbotHeight);
-window.addEventListener('scroll', setChatbotHeight);
+window.addEventListener('scroll', function(){setChatbotHeight();setUpdateWindowHeight();});
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", adjustDarkMode);
 
 // button svg code
