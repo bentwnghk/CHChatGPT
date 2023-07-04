@@ -373,19 +373,38 @@ function addChuanhuButton(botElement) {
     copyButton.classList.add('copy-bot-btn');
     copyButton.setAttribute('aria-label', 'Copy');
     copyButton.innerHTML = copyIcon;
-    copyButton.addEventListener('click', () => {
+    copyButton.addEventListener('click', async () => {
         const textToCopy = rawMessage.innerText;
-        navigator.clipboard
-            .writeText(textToCopy)
-            .then(() => {
+
+        try {
+            if ("clipboard" in navigator) {
+                await navigator.clipboard.writeText(textToCopy);
                 copyButton.innerHTML = copiedIcon;
                 setTimeout(() => {
                     copyButton.innerHTML = copyIcon;
                 }, 1500);
-            })
-            .catch(() => {
-                console.error("copy failed");
-            });
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+
+                document.body.appendChild(textArea);
+                textArea.select();
+
+                try {
+                    document.execCommand('copy');
+                    copyButton.innerHTML = copiedIcon;
+                    setTimeout(() => {
+                        copyButton.innerHTML = copyIcon;
+                    }, 1500);
+                } catch (error) {
+                    console.error("Copy failed: ", error);
+                }
+
+                document.body.removeChild(textArea);
+            }
+        } catch (error) {
+            console.error("Copy failed: ", error);
+        }
     });
     botElement.appendChild(copyButton);
 
@@ -539,7 +558,6 @@ async function updateLatestVersion() {
     const currentVersion = currentVersionElement.textContent;
     const versionTime = document.getElementById('version-time').innerText;
     const localVersionTime = versionTime !== "unknown" ? (new Date(versionTime)).getTime() : 0;
-    // const currentVersion = '20230619'; // for debugging
     updateInfoGotten = true; //无论成功与否都只执行一次，否则容易api超限...
     try {
         const data = await getLatestRelease();
@@ -548,7 +566,7 @@ async function updateLatestVersion() {
             releaseNoteElement.innerHTML = marked.parse(releaseNote);
         }
         const latestVersion = data.tag_name;
-        const latestVersionTime = (new Date(data.published_at)).getTime();
+        const latestVersionTime = (new Date(data.created_at)).getTime();
         if (latestVersionTime) {
             if (localVersionTime < latestVersionTime) {
                 latestVersionElement.textContent = latestVersion;
