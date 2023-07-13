@@ -96,8 +96,8 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         label=i18n("选择LoRA模型"), choices=[], multiselect=False, interactive=True, visible=False
                     )
                     with gr.Row():
-                        single_turn_checkbox = gr.Checkbox(label=i18n("单轮对话"), value=False)
-                        use_websearch_checkbox = gr.Checkbox(label=i18n("使用在线搜索"), value=False)
+                        single_turn_checkbox = gr.Checkbox(label=i18n("单轮对话"), value=False, elem_classes="switch_checkbox")
+                        use_websearch_checkbox = gr.Checkbox(label=i18n("使用在线搜索"), value=False, elem_classes="switch_checkbox")
                     language_select_dropdown = gr.Dropdown(
                         label=i18n("选择回复语言（针对搜索&索引功能）"),
                         choices=REPLY_LANGUAGES,
@@ -116,8 +116,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         placeholder=i18n("在这里输入System Prompt..."),
                         label="System prompt",
                         value=INITIAL_SYSTEM_PROMPT,
-                        lines=10,
-                        container=False,
+                        lines=10
                     )
                     with gr.Accordion(label=i18n("加载Prompt模板"), open=True):
                         with gr.Column():
@@ -151,7 +150,8 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                                     historyFileSelectDropdown = gr.Dropdown(
                                         label=i18n("从列表中加载对话"),
                                         choices=get_history_names(plain=True),
-                                        multiselect=False
+                                        multiselect=False,
+                                        container=False,
                                     )
                                 with gr.Row():
                                     with gr.Column(min_width=42, scale=1):
@@ -176,11 +176,12 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                                     downloadFile = gr.File(label=i18n("上/下载对话记录文件"), interactive=True)
 
                 with gr.Tab(label=i18n("高级")):
-                    gr.Markdown(i18n("# ⚠️ 务必谨慎更改 ⚠️\n\n如果无法使用请恢复默认设置"))
                     gr.HTML(get_html("appearance_switcher.html").format(label=i18n("切换亮暗色主题")), elem_classes="insert_block")
                     use_streaming_checkbox = gr.Checkbox(
-                            label=i18n("实时传输回答"), value=True, visible=ENABLE_STREAMING_OPTION
+                            label=i18n("实时传输回答"), value=True, visible=ENABLE_STREAMING_OPTION, elem_classes="switch_checkbox"
                         )
+                    checkUpdateBtn = gr.Button(i18n("🔄 检查更新..."), visible=check_update)
+                    gr.Markdown(i18n("# ⚠️ 务必谨慎更改 ⚠️"), elem_id="advanced_warning")
                     with gr.Accordion(i18n("参数"), open=False):
                         temperature_slider = gr.Slider(
                             minimum=-0,
@@ -208,7 +209,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         )
                         stop_sequence_txt = gr.Textbox(
                             show_label=True,
-                            placeholder=i18n("在这里输入停止符，用英文逗号隔开..."),
+                            placeholder=i18n("停止符，用英文逗号隔开..."),
                             label="stop",
                             value="",
                             lines=1,
@@ -268,6 +269,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                             label="API-Host",
                             value=config.api_host or shared.API_HOST,
                             lines=1,
+                            container=False,
                         )
                         changeAPIURLBtn = gr.Button(i18n("🔄 切换API地址"))
                         proxyTxt = gr.Textbox(
@@ -276,10 +278,10 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                             label=i18n("代理地址（示例：http://127.0.0.1:10809）"),
                             value="",
                             lines=2,
+                            container=False,
                         )
                         changeProxyBtn = gr.Button(i18n("🔄 设置代理地址"))
                         default_btn = gr.Button(i18n("🔙 恢复默认设置"))
-                    checkUpdateBtn = gr.Button(i18n("🔄 检查更新..."), visible=check_update)
 
     gr.Markdown(CHUANHU_DESCRIPTION, elem_id="description")
     gr.HTML(get_html("footer.html").format(versions=versions_html()), elem_id="footer")

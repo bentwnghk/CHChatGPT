@@ -72,7 +72,9 @@ LOCAL_MODELS = [
     "minimax-abab5-chat",
     "chatglm-6b",
     "chatglm-6b-int4",
-    "chatglm-6b-int4-qe",
+    "chatglm-6b-int4-ge",
+    "chatglm2-6b",
+    "chatglm2-6b-int4",
     "StableLM",
     "MOSS",
     "llama-7b-hf",
@@ -121,6 +123,7 @@ REPLY_LANGUAGES = [
     "Español",
     "Français",
     "Deutsch",
+    "한국어",
     "跟随问题语言（不稳定）"
 ]
 
