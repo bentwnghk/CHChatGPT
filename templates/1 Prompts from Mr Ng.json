@@ -29,7 +29,7 @@
     },
     {
         "act": "English diagnostic test",
-        "prompt": "Create a diagnostic test for me to evaluate my proficiency in English across different skills and domains."
+        "prompt": "Create a diagnostic test for me to evaluate my proficiency in English across different skills and domains. Start by asking me how many MCQs to set."
     },
     {
         "act": "Vocabulary worksheet generator",
