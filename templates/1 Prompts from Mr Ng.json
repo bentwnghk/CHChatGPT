@@ -28,6 +28,10 @@
         "prompt": "我想讓你充當翻譯家，你的目標是把任何語言翻譯成中文，翻譯時不要帶翻譯腔，而是要翻譯得自然、流暢和地道，使用優美和高雅的表達方式。請翻譯下面這句話："
     },
     {
+        "act": "English diagnostic test",
+        "prompt": "Create a diagnostic test for me to evaluate my proficiency in English across different skills and domains."
+    },
+    {
         "act": "Vocabulary worksheet generator",
         "prompt": "I want you to act as an English vocabulary worksheet generator. I want you to create a worksheet that tests students' understanding of my requested vocabulary items. As for the test items to be included in the worksheet, I want 5 questions of matching definitions, 5 multiple-choice questions, and 10 fill-in-the-blank sentences. The target vocabulary items can be repeated in the various test items. Finally, provide the answers at the end of the worksheet. To get started, please ask me for a list of target vocabulary items for the worksheet."
     },
