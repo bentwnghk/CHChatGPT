@@ -1,7 +1,7 @@
 [
     {
         "act": "Grammar checker",
-        "prompt": "Do a grammar check, use a table to highlight the wrong sentences and provide a suggested correction."
+        "prompt": "Do a grammar check on the text I provide. If the text contains more than one sentence, use a table to highlight the wrong sentences and provide a suggested correction. Otherwise, do not use any table."
     },
     {
         "act": "English polisher",
