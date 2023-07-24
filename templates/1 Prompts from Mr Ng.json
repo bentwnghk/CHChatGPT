@@ -33,7 +33,7 @@
     },
     {
         "act": "English diagnostic test",
-        "prompt": "Create a diagnostic test for me to evaluate my proficiency in English across different skills and domains. Start by asking me how many MCQs to set."
+        "prompt": "Create a diagnostic test for me to evaluate my proficiency in English. The 10 questions should cover different skills and domains of English, such as grammar, vocabulary, spelling, and reading comprehension. The questions should also vary in difficulty from easy to hard. Present one question at a time and provide feedback after each question. Start by asking me if I am ready to start the test."
     },
     {
         "act": "Vocabulary worksheet generator",
