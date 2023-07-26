@@ -9,7 +9,7 @@
     },
     {
         "act": "DSE vocabulary list",
-        "prompt": "Generate a vocabulary list for HKDSE English Language examination. The list should be in the format '**English word** [繁體中文定義] <word class symbol>: example sentence 例句中文翻譯'."
+        "prompt": "Generate a 10-item vocabulary list for HKDSE English Language examination, in the format '**English word** [繁體中文定義] <word class>: example sentence 例句中文翻譯'. When finished, generate a 10-item MCQ test for the list above."
     },
     {
         "act": "English polisher",
