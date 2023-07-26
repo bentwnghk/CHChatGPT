@@ -11,6 +11,7 @@ from . import presets
 
 __all__ = [
     "my_api_key",
+    "sensitive_id",
     "authflag",
     "auth_list",
     "dockerflag",
@@ -36,6 +37,9 @@ if os.path.exists("config.json"):
         config = json.load(f)
 else:
     config = {}
+
+sensitive_id = config.get("sensitive_id", "")
+sensitive_id = os.environ.get("SENSITIVE_ID", sensitive_id)
 
 lang_config = config.get("language", "auto")
 language = os.environ.get("LANGUAGE", lang_config)
@@ -75,6 +79,10 @@ if os.environ.get("dockerrun") == "yes":
 ## 处理 api-key 以及 允许的用户列表
 my_api_key = config.get("openai_api_key", "")
 my_api_key = os.environ.get("OPENAI_API_KEY", my_api_key)
+
+google_palm_api_key = config.get("google_palm_api_key", "")
+google_palm_api_key = os.environ.get("GOOGLE_PALM_API_KEY", google_palm_api_key)
+os.environ["GOOGLE_PALM_API_KEY"] = google_palm_api_key
 
 xmchat_api_key = config.get("xmchat_api_key", "")
 os.environ["XMCHAT_API_KEY"] = xmchat_api_key
