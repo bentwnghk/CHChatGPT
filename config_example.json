@@ -3,11 +3,19 @@
 
     //== API 配置 ==
     "openai_api_key": "", // 你的 OpenAI API Key，一般必填，若空缺则需在图形界面中填入API Key
-    "usage_limit": 120, // 该 OpenAI API Key 的当月限额，单位：美元
     "google_palm_api_key": "", // 你的 Google PaLM API Key，用于 Google PaLM 对话模型
     "xmchat_api_key": "", // 你的 xmchat API Key，用于 XMChat 对话模型
     "minimax_api_key": "", // 你的 MiniMax API Key，用于 MiniMax 对话模型
     "minimax_group_id": "", // 你的 MiniMax Group ID，用于 MiniMax 对话模型
+
+    //== Azure ==
+    "openai_api_type": "openai", // 可选项：azure, openai
+    "azure_openai_api_key": "", // 你的 Azure OpenAI API Key，用于 Azure OpenAI 对话模型
+    "azure_openai_api_base_url": "", // 你的 Azure Base URL
+    "azure_openai_api_version": "2023-05-15", // 你的 Azure OpenAI API 版本
+    "azure_deployment_name": "", // 你的 Azure OpenAI Chat 模型 Deployment 名称
+    "azure_embedding_deployment_name": "", // 你的 Azure OpenAI Embedding 模型 Deployment 名称
+    "azure_embedding_model_name": "text-embedding-ada-002", // 你的 Azure OpenAI Embedding 模型名称
 
     //== 基础配置 ==
     "language": "auto", // 界面语言，可选"auto", "zh-CN", "en-US", "ja-JP", "ko-KR"
@@ -20,6 +28,7 @@
     //== API 用量 ==
     "show_api_billing": false, //是否显示OpenAI API用量（启用需要填写sensitive_id）
     "sensitive_id": "", // 你 OpenAI 账户的 Sensitive ID，用于查询 API 用量
+    "usage_limit": 120, // 该 OpenAI API Key 的当月限额，单位：美元，用于计算百分比和显示上限
 
     //== 川虎助理设置 ==
     "default_chuanhu_assistant_model": "gpt-4", //川虎助理使用的模型，可选gpt-3.5-turbo或者gpt-4等

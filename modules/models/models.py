@@ -562,6 +562,7 @@ def get_model(
     try:
         if model_type == ModelType.OpenAI:
             logging.info(f"正在加载OpenAI模型: {model_name}")
+            access_key = os.environ.get("OPENAI_API_KEY", access_key)
             model = OpenAIClient(
                 model_name=model_name,
                 api_key=access_key,
@@ -614,8 +615,11 @@ def get_model(
             model = ChuanhuAgent_Client(model_name, access_key, user_name=user_name)
         elif model_type == ModelType.GooglePaLM:
             from .Google_PaLM import Google_PaLM_Client
-            access_key = os.environ.get("GOOGLE_PALM_API_KEY")
+            access_key = os.environ.get("GOOGLE_PALM_API_KEY", access_key)
             model = Google_PaLM_Client(model_name, access_key, user_name=user_name)
+        elif model_type == ModelType.LangchainChat:
+            from .azure import Azure_OpenAI_Client
+            model = Azure_OpenAI_Client(model_name, user_name=user_name)
         elif model_type == ModelType.Unknown:
             raise ValueError(f"未知模型: {model_name}")
         logging.info(msg)
