@@ -22,6 +22,8 @@ var updateToast = null;
 var sendBtn = null;
 var cancelBtn = null;
 var sliders = null;
+var updateChuanhuBtn = null;
+var statusDisplay = null;
 
 var userLogged = false;
 var usernameGotten = false;
@@ -36,7 +38,7 @@ var language = navigator.language.slice(0,2);
 var currentTime = new Date().getTime();
 
 // i18n
-var forView_i18n = {
+const forView_i18n = {
     'zh': "仅供查看",
     'en': "For viewing only",
     'ja': "閲覧専用",
@@ -46,14 +48,14 @@ var forView_i18n = {
     'sv': "Endast för visning",
 };
 
-var deleteConfirm_i18n_pref = {
+const deleteConfirm_i18n_pref = {
     'zh': "你真的要删除 ",
     'en': "Are you sure you want to delete ",
     'ja': "本当に ",
     'ko': "정말로 ",
     'sv': "Är du säker på att du vill ta bort "
 };
-var deleteConfirm_i18n_suff = {
+const deleteConfirm_i18n_suff = {
     'zh': " 吗？",
     'en': " ?",
     'ja': " を削除してもよろしいですか？",
@@ -63,13 +65,35 @@ var deleteConfirm_i18n_suff = {
 var deleteConfirm_msg_pref = "Are you sure you want to delete ";
 var deleteConfirm_msg_suff = " ?";
 
-var usingLatest_i18n = {
+const usingLatest_i18n = {
     'zh': "您使用的就是最新版！",
     'en': "You are using the latest version!",
     'ja': "最新バージョンを使用しています！",
     'ko': "최신 버전을 사용하고 있습니다!",
     'sv': "Du använder den senaste versionen!"
 };
+
+const updatingMsg_i18n = {
+    'zh': "正在尝试更新...",
+    'en': "Trying to update...",
+    'ja': "更新を試みています...",
+    'ko': "업데이트를 시도 중...",
+    'sv': "Försöker uppdatera..."
+}
+const updateSuccess_i18n = {
+    'zh': "更新成功，请重启本程序。",
+    'en': "Updated successfully, please restart this program.",
+    'ja': "更新が成功しました、このプログラムを再起動してください。",
+    'ko': "업데이트 성공, 이 프로그램을 재시작 해주세요.",
+    'sv': "Uppdaterat framgångsrikt, starta om programmet."
+}
+const updateFailure_i18n = {
+    'zh': '更新失败，请尝试<a href="https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/使用教程#手动更新" target="_blank">手动更新</a>。',
+    'en': 'Update failed, please try <a href="https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/使用教程#手动更新" target="_blank">manually updating</a>.',
+    'ja': '更新に失敗しました、<a href="https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/使用教程#手动更新" target="_blank">手動での更新</a>をお試しください。',
+    'ko': '업데이트 실패, <a href="https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/使用教程#手动更新" target="_blank">수동 업데이트</a>를 시도하십시오.',
+    'sv': 'Uppdateringen misslyckades, prova att <a href="https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/使用教程#手动更新" target="_blank">uppdatera manuellt</a>.'
+}
 
 // gradio 页面加载好了么??? 我能动你的元素了么??
 function gradioLoaded(mutations) {
@@ -87,6 +111,8 @@ function gradioLoaded(mutations) {
             sendBtn = document.getElementById("submit_btn");
             cancelBtn = document.getElementById("cancel_btn");
             sliders = document.querySelectorAll('input[type="range"]');
+            updateChuanhuBtn = document.getElementById("update_chuanhu_btn");
+            statusDisplay = document.querySelector('#status_display');
 
             if (loginUserForm) {
                 localStorage.setItem("userLogged", true);
@@ -114,6 +140,9 @@ function gradioLoaded(mutations) {
                 }
                 setChatbotScroll();
                 mObserver.observe(chatbotWrap, { attributes: true, childList: true, subtree: true, characterData: true});
+            }
+            if (statusDisplay) {
+                // statusObserver.observe(statusDisplay, { childList: true, subtree: true, characterData: true});
             }
             if (sliders) {
                 setSlider();
@@ -505,6 +534,28 @@ var submitObserver = new MutationObserver(function (mutationsList) {
     saveHistoryHtml();
 });
 
+var statusObserver = new MutationObserver(function (mutationsList) {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'attributes' || mutation.type === 'childList') {
+            if (statusDisplay.innerHTML.includes('<span id="update-status"')) {
+                if (getUpdateStatus() === "success") {
+                    updatingInfoElement.innerText = updateSuccess_i18n.hasOwnProperty(language) ? updateSuccess_i18n[language] : updateSuccess_i18n['en'];
+                    noUpdateHtml();
+                    localStorage.setItem('isLatestVersion', 'true');
+                    isLatestVersion = true;
+                } else if (getUpdateStatus() === "failure") {
+                    updatingInfoElement.innerText = updateFailure_i18n.hasOwnProperty(language) ? updateFailure_i18n[language] : updateFailure_i18n['en'];
+                } else if (getUpdateStatus() != "") {
+                    updatingInfoElement.innerText = getUpdateStatus();
+                }
+                updateStatus.parentNode.removeChild(updateStatus);
+                enableUpdateBtns();
+                updateSpinner.stop();
+            }
+        }
+    }
+});
+
 var loadhistorytime = 0; // for debugging
 function saveHistoryHtml() {
     var historyHtml = document.querySelector('#chuanhu_chatbot>.wrapper>.wrap');
@@ -568,7 +619,7 @@ async function getLatestRelease() {
             console.log(`Error: ${response.status} - ${response.statusText}`);
             updateInfoGotten = true;
             return null;
-          }
+        }
         const data = await response.json();
         updateInfoGotten = true;
         return data;
@@ -578,10 +629,14 @@ async function getLatestRelease() {
         return null;
     }
 }
+
+var releaseNoteElement = document.getElementById('release-note-content');
+var updatingInfoElement = document.getElementById('updating-info');
 async function updateLatestVersion() {
     const currentVersionElement = document.getElementById('current-version');
     const latestVersionElement = document.getElementById('latest-version-title');
-    const releaseNoteElement = document.getElementById('release-note-content');
+    releaseNoteElement = document.getElementById('release-note-content');
+    updatingInfoElement = document.getElementById('updating-info');
     const currentVersion = currentVersionElement.textContent;
     const versionTime = document.getElementById('version-time').innerText;
     const localVersionTime = versionTime !== "unknown" ? (new Date(versionTime)).getTime() : 0;
@@ -609,9 +664,21 @@ async function updateLatestVersion() {
         console.error(error);
     }
 }
-function getUpdate() {
+function getUpdateInfo() {
     window.open('https://github.com/gaizhenbiao/chuanhuchatgpt/releases/latest', '_blank');
     closeUpdateToast();
+}
+var updateSpinner = null;
+function bgUpdateChuanhu() {
+    updateChuanhuBtn.click();
+    updatingInfoElement.innerText = updatingMsg_i18n.hasOwnProperty(language) ? updatingMsg_i18n[language] : updatingMsg_i18n['en'];
+    var updatingSpinner = document.getElementById('updating-spinner');
+    updateSpinner = new Spin.Spinner({color:'#06AE56',top:'45%',lines:9}).spin(updatingSpinner);
+    updatingInfoElement.classList.remove('hideK');
+    disableUpdateBtns();
+    const releaseNoteWrap = document.getElementById('release-note-wrap');
+    releaseNoteWrap.style.setProperty('display', 'none');
+    statusObserver.observe(statusDisplay, { childList: true, subtree: true, characterData: true});
 }
 function cancelUpdate() {
     closeUpdateToast();
@@ -623,6 +690,9 @@ function openUpdateToast() {
 function closeUpdateToast() {
     updateToast.style.setProperty('top', '-500px');
     showingUpdateInfo = false;
+    if (updatingInfoElement.classList.contains('hideK') === false) {
+        updatingInfoElement.classList.add('hideK');
+    }
 }
 function manualCheckUpdate() {
     openUpdateToast();
@@ -633,16 +703,41 @@ function manualCheckUpdate() {
 function noUpdate() {
     localStorage.setItem('isLatestVersion', 'true');
     isLatestVersion = true;
+    noUpdateHtml();
+}
+function noUpdateHtml() {
     const versionInfoElement = document.getElementById('version-info-title');
-    const releaseNoteWrap = document.getElementById('release-note-wrap');
     const gotoUpdateBtn = document.getElementById('goto-update-btn');
     const closeUpdateBtn = document.getElementById('close-update-btn');
-
-    versionInfoElement.textContent = usingLatest_i18n.hasOwnProperty(language) ? usingLatest_i18n[language] : usingLatest_i18n['en'];
+    const releaseNoteWrap = document.getElementById('release-note-wrap');
     releaseNoteWrap.style.setProperty('display', 'none');
+    versionInfoElement.textContent = usingLatest_i18n.hasOwnProperty(language) ? usingLatest_i18n[language] : usingLatest_i18n['en'];
     gotoUpdateBtn.classList.add('hideK');
     closeUpdateBtn.classList.remove('hideK');
 }
+var updateStatus = null;
+function getUpdateStatus() {
+    updateStatus = statusDisplay.querySelector("#update-status");
+    if (updateStatus) {
+        return updateStatus.innerText;
+    } else {
+        return "unknown";
+    }
+}
+
+function disableUpdateBtns() {
+    const updatesButtons = document.querySelectorAll('.btn-update');
+    updatesButtons.forEach( function (btn) {
+        btn.disabled = true;
+    });
+}
+function enableUpdateBtns() {
+    const updatesButtons = document.querySelectorAll('.btn-update');
+    updatesButtons.forEach( function (btn) {
+        btn.disabled = false;
+    });
+}
+
 function setUpdateWindowHeight() {
     if (!showingUpdateInfo) {return;}
     const scrollPosition = window.scrollY;
