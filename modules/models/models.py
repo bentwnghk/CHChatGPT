@@ -96,6 +96,7 @@ class OpenAIClient(BaseLLMModel):
             # rounded_usage = "{:.5f}".format(usage_data["total_usage"] / 100)
             rounded_usage = round(usage_data["total_usage"] / 100, 5)
             usage_percent = round(usage_data["total_usage"] / usage_limit, 2)
+            from ..webui import get_html
             # return i18n("**本月使用金额** ") + f"\u3000 ${rounded_usage}"
             return get_html("billing_info.html").format(
                     label = i18n("本月使用金额"),
@@ -208,7 +209,7 @@ class OpenAIClient(BaseLLMModel):
                 chunk_length = len(chunk)
                 try:
                     chunk = json.loads(chunk[6:])
-                except json.JSONDecodeError:
+                except:
                     print(i18n("JSON解析错误,收到的内容: ") + f"{chunk}")
                     error_msg += chunk
                     continue

@@ -2,10 +2,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type
 import logging
-import json
+import commentjson as json
 import os
 import datetime
-from datetime import timezone 
+from datetime import timezone
 import hashlib
 import csv
 import requests
@@ -206,6 +206,28 @@ def convert_mdtext(md_text): # deprecated
     output += ALREADY_CONVERTED_MARK
     return output
 
+
+def clip_rawtext(chat_message, need_escape=True):
+    # first, clip hr line
+    hr_pattern = r'\n\n<hr class="append-display no-in-raw" />(.*?)'
+    hr_match = re.search(hr_pattern, chat_message, re.DOTALL)
+    message_clipped = chat_message[:hr_match.start()] if hr_match else chat_message
+    # second, avoid agent-prefix being escaped
+    agent_prefix_pattern = r'<!-- S O PREFIX --><p class="agent-prefix">(.*?)<\/p><!-- E O PREFIX -->'
+    agent_matches = re.findall(agent_prefix_pattern, message_clipped)
+    final_message = ""
+    if agent_matches:
+        agent_parts = re.split(agent_prefix_pattern, message_clipped)
+        for i, part in enumerate(agent_parts):
+            if i % 2 == 0:
+                final_message += escape_markdown(part) if need_escape else part
+            else:
+                final_message += f'<!-- S O PREFIX --><p class="agent-prefix">{part}</p><!-- E O PREFIX -->'
+    else:
+        final_message = escape_markdown(message_clipped) if need_escape else message_clipped
+    return final_message
+
+
 def convert_bot_before_marked(chat_message):
     """
     注意不能给输出加缩进, 否则会被marked解析成代码块
@@ -213,15 +235,13 @@ def convert_bot_before_marked(chat_message):
     if '<div class="md-message">' in chat_message:
         return chat_message
     else:
+        raw = f'<div class="raw-message hideM"><pre>{clip_rawtext(chat_message)}</pre></div>'
+        # really_raw = f'{START_OF_OUTPUT_MARK}<div class="really-raw hideM">{clip_rawtext(chat_message, need_escape=False)}\n</div>{END_OF_OUTPUT_MARK}'
+
         code_block_pattern = re.compile(r"```(.*?)(?:```|$)", re.DOTALL)
         code_blocks = code_block_pattern.findall(chat_message)
         non_code_parts = code_block_pattern.split(chat_message)[::2]
-        result = []
-
-        hr_pattern = r'\n\n<hr class="append-display no-in-raw" />(.*?)'
-        hr_match = re.search(hr_pattern, chat_message, re.DOTALL)
-        clip_hr = chat_message[:hr_match.start()] if hr_match else chat_message
-        raw = f'<div class="raw-message hideM">{escape_markdown(clip_hr)}</div>'
+        result = []  
         for non_code, code in zip(non_code_parts, code_blocks + [""]):
             if non_code.strip():
                 result.append(non_code)
@@ -229,7 +249,7 @@ def convert_bot_before_marked(chat_message):
                 code = f"\n```{code}\n```"
                 result.append(code)
         result = "".join(result)
-        md = f'<div class="md-message">{result}\n</div>'
+        md = f'<div class="md-message">\n\n{result}\n</div>'
         return raw + md
 
 def convert_user_before_marked(chat_message):
@@ -263,6 +283,7 @@ def escape_markdown(text):
         '|': '&#124;',
         '$': '&#36;',
         ':': '&#58;',
+        '\n': '<br>',
     }
     text = text.replace('    ', '&nbsp;&nbsp;&nbsp;&nbsp;')
     return ''.join(escape_chars.get(c, c) for c in text)
@@ -518,97 +539,19 @@ def transfer_input(inputs):
     )
 
 
-
-def run(command, desc=None, errdesc=None, custom_env=None, live=False):
-    if desc is not None:
-        print(desc)
-    if live:
-        result = subprocess.run(command, shell=True, env=os.environ if custom_env is None else custom_env)
-        if result.returncode != 0:
-            raise RuntimeError(f"""{errdesc or 'Error running command'}.
-                Command: {command}
-                Error code: {result.returncode}""")
-
-        return ""
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
-    if result.returncode != 0:
-        message = f"""{errdesc or 'Error running command'}.
-            Command: {command}
-            Error code: {result.returncode}
-            stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
-            stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
-            """
-        raise RuntimeError(message)
-    return result.stdout.decode(encoding="utf8", errors="ignore")
-
-def commit_html():
-    git = os.environ.get('GIT', "git")
-    try:
-        commit_hash = run(f"{git} rev-parse HEAD").strip()
-    except Exception:
-        commit_hash = "<none>"
-    if commit_hash != "<none>":
-        short_commit = commit_hash[0:7]
-        commit_info = f"{short_commit}"
-    else:
-        commit_info = "unknown \U0001F615"
-    return commit_info
-
-def tag_html():
-    git = os.environ.get('GIT', "git")
-    try:
-        tag = run(f"{git} describe --tags --exact-match").strip()
-    except Exception:
-        tag = "<none>"
-    if tag != "<none>":
-        tag_info = f'<a style="text-decoration:none;color:inherit" href="https://github.com/GaiZhenbiao/ChuanhuChatGPT/releases/tag/{tag}">{tag}</a>'
-    else:
-        tag_info = "unknown \U0001F615"
-    return tag_info
-
-def repo_html():
-    commit_version = commit_html()
-    tag_version = tag_html()
-    return tag_version if tag_version != "unknown \U0001F615" else commit_version
-
-def versions_html():
-    python_version = ".".join([str(x) for x in sys.version_info[0:3]])
-    repo_version = repo_html()
-    return f"""
-        Python: <span title="{sys.version}">{python_version}</span>
-         • 
-        Gradio: {gr.__version__}
-         • 
-        Version: {repo_version}
-        """
-
-def version_time():
-    git = os.environ.get('GIT', "git")
-    try:
-        commit_time = run(f"TZ=UTC {git} log -1 --format=%cd --date='format-local:%Y-%m-%dT%H:%M:%SZ'").strip()
-    except Exception:
-        commit_time = "unknown"
-    return commit_time
-
 def update_chuanhu():
-    git = os.environ.get('GIT', "git")
-    pip = os.environ.get('PIP', "pip")
-    try:
-        run(f"{git} fetch --all && ({git} pull https://github.com/GaiZhenbiao/ChuanhuChatGPT.git main -f || ({git} stash && {git} pull https://github.com/GaiZhenbiao/ChuanhuChatGPT.git main -f && {git} stash pop)) && {pip} install -r requirements.txt")
-        logging.info("Successfully updated")
+    from .repo import background_update
+
+    print("[Updater] Trying to update...")
+    update_status = background_update()
+    if update_status == "success":
+        logging.info("Successfully updated, restart needed")
         status = '<span id="update-status" class="hideK">success</span>'
         return gr.Markdown.update(value=i18n("更新成功，请重启本程序")+status)
-    except Exception:
-        logging.info("Failed to update")
+    else:
         status = '<span id="update-status" class="hideK">failure</span>'
         return gr.Markdown.update(value=i18n("更新失败，请尝试[手动更新](https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/使用教程#手动更新)")+status)
 
-def get_html(filename):
-    path = os.path.join(shared.chuanhu_path, "assets", "html", filename)
-    if os.path.exists(path):
-        with open(path, encoding="utf8") as file:
-            return file.read()
-    return ""
 
 def add_source_numbers(lst, source_name = "Source", use_source = True):
     if use_source:
@@ -706,3 +649,24 @@ def get_history_filepath(username):
 
     latest_file = os.path.join(dirname, latest_file)
     return latest_file
+
+def beautify_err_msg(err_msg):
+    if "insufficient_quota" in  err_msg:
+        return i18n("剩余配额不足，[进一步了解](https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#you-exceeded-your-current-quota-please-check-your-plan-and-billing-details)")
+    if "The model: gpt-4 does not exist" in err_msg:
+        return i18n("你没有权限访问 GPT4，[进一步了解](https://github.com/GaiZhenbiao/ChuanhuChatGPT/issues/843)")
+    if "Resource not found" in err_msg:
+        return i18n("请查看 config_example.json，配置 Azure OpenAI")
+    return err_msg
+
+def auth_from_conf(username, password):
+    try:
+        with open("config.json", encoding="utf-8") as f:
+            conf = json.load(f)
+        usernames, passwords = [i[0] for i in conf["users"]], [i[1] for i in conf["users"]]
+        if username in usernames:
+            if passwords[usernames.index(username)] == password:
+                return True
+        return False
+    except:
+        return False

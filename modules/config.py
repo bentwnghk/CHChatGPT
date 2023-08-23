@@ -16,7 +16,6 @@ __all__ = [
     "auth_list",
     "dockerflag",
     "retrieve_proxy",
-    "log_level",
     "advance_docs",
     "update_doc_config",
     "usage_limit",
@@ -92,10 +91,11 @@ os.environ["OPENAI_API_KEY"] = my_api_key
 os.environ["OPENAI_EMBEDDING_API_KEY"] = my_api_key
 
 if config.get("legacy_api_usage", False):
+    sensitive_id = my_api_key
+else:
     sensitive_id = config.get("sensitive_id", "")
     sensitive_id = os.environ.get("SENSITIVE_ID", sensitive_id)
-else:
-    sensitive_id = my_api_key
+
 
 google_palm_api_key = config.get("google_palm_api_key", "")
 google_palm_api_key = os.environ.get(
@@ -155,12 +155,6 @@ def retrieve_openai_api(api_key=None):
     os.environ["OPENAI_API_KEY"] = old_api_key
 
 
-# 处理log
-log_level = config.get("log_level", "INFO")
-logging.basicConfig(
-    level=log_level,
-    format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-)
 
 # 处理代理：
 http_proxy = os.environ.get("HTTP_PROXY", "")
