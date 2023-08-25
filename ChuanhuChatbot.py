@@ -5,6 +5,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
 )
 
+import colorama
 import gradio as gr
 
 from modules import config
@@ -14,6 +15,7 @@ from modules.presets import *
 from modules.overwrites import *
 from modules.webui import *
 from modules.repo import *
+from modules.train_func import *
 from modules.models.models import get_model
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -42,6 +44,7 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
         status_display = gr.Markdown(get_geoip(), elem_id="status-display")
     with gr.Row(elem_id="float-display"):
         user_info = gr.Markdown(value="getting user info...", elem_id="user-info")
+        config_info = gr.HTML(get_html("config_info.html").format(bot_avatar=config.bot_avatar, user_avatar=config.user_avatar), visible=False, elem_id="config-info")
         update_info = gr.HTML(get_html("update.html").format(
             current_version=repo_tag_html(),
             version_time=version_time(),
@@ -65,13 +68,17 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
                 with gr.Column(min_width=42, scale=1):
                     submitBtn = gr.Button(value="", variant="primary", elem_id="submit-btn")
                     cancelBtn = gr.Button(value="", variant="secondary", visible=False, elem_id="cancel-btn")
-            with gr.Row():
-                emptyBtn = gr.Button(
-                    i18n("🧹 新的对话"), elem_id="empty-btn"
-                )
-                retryBtn = gr.Button(i18n("🔄 重新生成"))
-                delFirstBtn = gr.Button(i18n("🗑️ 删除最旧对话"))
-                delLastBtn = gr.Button(i18n("🗑️ 删除最新对话"))
+            with gr.Row(elem_id="chatbot-buttons"):
+                with gr.Column(min_width=120, scale=1):
+                    emptyBtn = gr.Button(
+                        i18n("🧹 新的对话"), elem_id="empty-btn"
+                    )
+                with gr.Column(min_width=120, scale=1):
+                    retryBtn = gr.Button(i18n("🔄 重新生成"))
+                with gr.Column(min_width=120, scale=1):
+                    delFirstBtn = gr.Button(i18n("🗑️ 删除最旧对话"))
+                with gr.Column(min_width=120, scale=1):
+                    delLastBtn = gr.Button(i18n("🗑️ 删除最新对话"))
                 with gr.Row(visible=False) as like_dislike_area:
                     with gr.Column(min_width=20, scale=1):
                         likeBtn = gr.Button(i18n("👍"))
@@ -179,6 +186,25 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
                             with gr.Row():
                                 with gr.Column():
                                     downloadFile = gr.File(label=i18n("上/下载对话记录文件"), interactive=True)
+
+                with gr.Tab(label=i18n("微调")):
+                    openai_train_status = gr.Markdown(label=i18n("训练状态"), value=i18n("在这里[查看使用介绍](https://github.com/GaiZhenbiao/ChuanhuChatGPT/wiki/%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B#%E5%BE%AE%E8%B0%83-gpt-35)"))
+
+                    with gr.Tab(label=i18n("准备数据集")):
+                        dataset_preview_json = gr.JSON(label=i18n("数据集预览"), readonly=True)
+                        dataset_selection = gr.Files(label = i18n("选择数据集"), file_types=[".xlsx", ".jsonl"], file_count="single")
+                        upload_to_openai_btn = gr.Button(i18n("上传到OpenAI"), variant="primary", interactive=False)
+
+                    with gr.Tab(label=i18n("训练")):
+                        openai_ft_file_id = gr.Textbox(label=i18n("文件ID"), value="", lines=1, placeholder=i18n("上传到 OpenAI 后自动填充"))
+                        openai_ft_suffix = gr.Textbox(label=i18n("模型名称后缀"), value="", lines=1, placeholder=i18n("可选，用于区分不同的模型"))
+                        openai_train_epoch_slider = gr.Slider(label=i18n("训练轮数（Epochs）"), minimum=1, maximum=100, value=3, step=1, interactive=True)
+                        openai_start_train_btn = gr.Button(i18n("开始训练"), variant="primary", interactive=False)
+
+                    with gr.Tab(label=i18n("状态")):
+                        openai_status_refresh_btn = gr.Button(i18n("刷新状态"))
+                        openai_cancel_all_jobs_btn = gr.Button(i18n("取消所有任务"))
+                        add_to_models_btn = gr.Button(i18n("添加训练好的模型到模型列表"), interactive=False)
 
                 with gr.Tab(label=i18n("高级")):
                     gr.HTML(get_html("appearance_switcher.html").format(label=i18n("切换亮暗色主题")), elem_classes="insert-block")
@@ -296,6 +322,7 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
                         # changeAPIURLBtn = gr.Button(i18n("🔄 切换API地址"))
                         updateChuanhuBtn = gr.Button(visible=False, elem_classes="invisible-btn", elem_id="update-chuanhu-btn")
 
+
     gr.Markdown(CHUANHU_DESCRIPTION, elem_id="description")
     gr.HTML(get_html("footer.html").format(versions=versions_html()), elem_id="footer")
 
@@ -377,7 +404,7 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
         inputs=[current_model],
         outputs=[chatbot, status_display],
         show_progress=True,
-        _js='clearHistoryHtml',
+        _js='clearChatbot',
     )
 
     retryBtn.click(**start_outputing_args).then(
@@ -466,6 +493,18 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
     historyDeleteBtn.click(delete_chat_history, [current_model, historyFileSelectDropdown, user_name], [status_display, historyFileSelectDropdown, chatbot], _js='(a,b,c)=>{return showConfirmationDialog(a, b, c);}')
     historyFileSelectDropdown.change(**load_history_from_file_args)
     downloadFile.change(upload_chat_history, [current_model, downloadFile, user_name], [saveFileName, systemPromptTxt, chatbot])
+
+    # Train
+    dataset_selection.upload(handle_dataset_selection, dataset_selection, [dataset_preview_json, upload_to_openai_btn, openai_train_status])
+    dataset_selection.clear(handle_dataset_clear, [], [dataset_preview_json, upload_to_openai_btn])
+    upload_to_openai_btn.click(upload_to_openai, [dataset_selection], [openai_ft_file_id, openai_train_status], show_progress=True)
+
+    openai_ft_file_id.change(lambda x: gr.update(interactive=True) if len(x) > 0 else gr.update(interactive=False), [openai_ft_file_id], [openai_start_train_btn])
+    openai_start_train_btn.click(start_training, [openai_ft_file_id, openai_ft_suffix, openai_train_epoch_slider], [openai_train_status])
+
+    openai_status_refresh_btn.click(get_training_status, [], [openai_train_status, add_to_models_btn])
+    add_to_models_btn.click(add_to_models, [], [model_select_dropdown, openai_train_status], show_progress=True)
+    openai_cancel_all_jobs_btn.click(cancel_all_jobs, [], [openai_train_status], show_progress=True)
 
     # Advanced
     max_context_length_slider.change(set_token_upper_limit, [current_model, max_context_length_slider], None)
