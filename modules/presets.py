@@ -72,6 +72,10 @@ LOCAL_MODELS = [
     "yuanai-1.0-rhythm_poems",
     "minimax-abab4-chat",
     "minimax-abab5-chat",
+    "midjourney"
+]
+
+LOCAL_MODELS = [
     "chatglm-6b",
     "chatglm-6b-int4",
     "chatglm-6b-int4-ge",
