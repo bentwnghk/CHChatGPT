@@ -37,7 +37,7 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: false
+          push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/chchatgpt:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/chchatgpt:${{ github.sha }}
