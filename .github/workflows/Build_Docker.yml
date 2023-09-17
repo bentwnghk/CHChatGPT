@@ -41,11 +41,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/chchatgpt:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/chchatgpt:${{ github.sha }}
-
-          # outputs: type=oci,dest=/tmp/myimage-${{ env.COMMIT_SHA }}.tar
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: chchatgpt-${{ env.COMMIT_SHA }}
-          path: /tmp/myimage-${{ env.COMMIT_SHA }}.tar
