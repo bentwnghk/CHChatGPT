@@ -40,12 +40,12 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags: |
-            ghcr.io/${{ env.GITOWNER }}/chuanhuchatgpt:latest
-            ghcr.io/${{ env.GITOWNER }}/chuanhuchatgpt:${{ github.sha }}
+            ghcr.io/${{ env.GITOWNER }}/chchatgpt:latest
+            ghcr.io/${{ env.GITOWNER }}/chchatgpt:${{ github.sha }}
           outputs: type=oci,dest=/tmp/myimage-${{ env.COMMIT_SHA }}.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: chuanhuchatgpt-${{ env.COMMIT_SHA }}
+          name: chchatgpt-${{ env.COMMIT_SHA }}
           path: /tmp/myimage-${{ env.COMMIT_SHA }}.tar
