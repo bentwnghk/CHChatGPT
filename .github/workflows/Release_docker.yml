@@ -29,13 +29,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.MY_TOKEN }}
-
       - name: Owner names
         run: |
           GITOWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
@@ -48,7 +41,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ env.GITOWNER }}/chchatgpt:latest
-            ghcr.io/${{ env.GITOWNER }}/chchatgpt:${{ env.RELEASE_TAG }}
             ${{ secrets.DOCKERHUB_USERNAME }}/chchatgpt:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/chchatgpt:${{ env.RELEASE_TAG }}
