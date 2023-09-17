@@ -520,13 +520,19 @@ class BaseLLMModel:
         reply_language="中文",
     ):
         logging.debug("重试中……")
-        if len(self.history) > 0:
+        if len(self.history) > 1:
             inputs = self.history[-2]["content"]
             del self.history[-2:]
-        if len(self.all_token_counts) > 0:
-            self.all_token_counts.pop()
+            if len(self.all_token_counts) > 0:
+                self.all_token_counts.pop()
         elif len(chatbot) > 0:
             inputs = chatbot[-1][0]
+            if '<div class="user-message">' in inputs:
+                inputs = inputs.split('<div class="user-message">')[1]
+                inputs = inputs.split("</div>")[0]
+        elif len(self.history) == 1:
+            inputs = self.history[-1]["content"]
+            del self.history[-1]
         else:
             yield chatbot, f"{STANDARD_ERROR_MSG}上下文是空的"
             return

@@ -2,11 +2,10 @@ import base64
 import io
 import json
 import logging
-import pathlib
-import time
-import tempfile
 import os
-
+import pathlib
+import tempfile
+import time
 from datetime import datetime
 
 import requests
@@ -14,7 +13,7 @@ import tiktoken
 from PIL import Image
 
 from modules.config import retrieve_proxy
-from modules.models.models import XMChat
+from modules.models.XMChat import XMChat
 
 mj_proxy_api_base = os.getenv("MIDJOURNEY_PROXY_API_BASE")
 mj_discord_proxy_url = os.getenv("MIDJOURNEY_DISCORD_PROXY_URL")
@@ -221,7 +220,7 @@ class Midjourney_Client(XMChat):
     def reset(self):
         self.image_bytes = None
         self.image_path = None
-        return [], "已重置"
+        return super().reset()
 
     def get_answer_at_once(self):
         content = self.history[-1]['content']
@@ -367,7 +366,7 @@ UPSCALE - 确认后放大图片，第一个数值为需要放大的图片（1~4�
     请使用SD进行UPSCALE
 VARIATION - 图片变体，第一个数值为需要放大的图片（1~4），第二参数为任务ID
     /mj VARIATION::1::123456789
-    
+
 【绘图参数】
 所有命令默认会带上参数--v 5.2
 其他参数参照 https://docs.midjourney.com/docs/parameter-list
