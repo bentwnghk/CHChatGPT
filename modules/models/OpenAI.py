@@ -149,13 +149,13 @@ class OpenAIClient(BaseLLMModel):
             timeout = TIMEOUT_ALL
 
         # 如果有自定义的api-host，使用自定义host发送请求，否则使用默认设置发送请求
-        if shared.state.completion_url != COMPLETION_URL:
-            logging.debug(f"使用自定义API URL: {shared.state.completion_url}")
+        if shared.state.chat_completion_url != CHAT_COMPLETION_URL:
+            logging.debug(f"使用自定义API URL: {shared.state.chat_completion_url}")
 
         with retrieve_proxy():
             try:
                 response = requests.post(
-                    shared.state.completion_url,
+                    shared.state.chat_completion_url,
                     headers=headers,
                     json=payload,
                     stream=stream,
@@ -217,7 +217,7 @@ class OpenAIClient(BaseLLMModel):
                 except:
                     print(f"ERROR: {chunk}")
                     continue
-        if error_msg:
+        if error_msg and not error_msg=="data: [DONE]":
             raise Exception(error_msg)
 
     def set_key(self, new_access_key):
@@ -237,12 +237,12 @@ class OpenAIClient(BaseLLMModel):
             "messages": history,
         }
         # 如果有自定义的api-host，使用自定义host发送请求，否则使用默认设置发送请求
-        if shared.state.completion_url != COMPLETION_URL:
-            logging.debug(f"使用自定义API URL: {shared.state.completion_url}")
+        if shared.state.chat_completion_url != CHAT_COMPLETION_URL:
+            logging.debug(f"使用自定义API URL: {shared.state.chat_completion_url}")
 
         with retrieve_proxy():
             response = requests.post(
-                shared.state.completion_url,
+                shared.state.chat_completion_url,
                 headers=headers,
                 json=payload,
                 stream=False,

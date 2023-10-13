@@ -14,7 +14,9 @@ LLAMA_INFERENCER = None
 # ChatGPT 设置
 INITIAL_SYSTEM_PROMPT = "You are a helpful assistant."
 API_HOST = "api.openai.com"
-COMPLETION_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_API_BASE = "https://api.openai.com/v1"
+CHAT_COMPLETION_URL = "https://api.openai.com/v1/chat/completions"
+COMPLETION_URL = "https://api.openai.com/v1/completions"
 BALANCE_API_URL="https://api.openai.com/dashboard/billing/credit_grants"
 USAGE_API_URL="https://api.openai.com/dashboard/billing/usage"
 HISTORY_DIR = Path("history")
@@ -51,6 +53,7 @@ CHUANHU_DESCRIPTION = i18n("由Bilibili [土川虎虎虎](https://space.bilibili
 ONLINE_MODELS = [
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-instruct",
     "gpt-3.5-turbo-16k",
     "gpt-3.5-turbo-0301",
     "gpt-4",
