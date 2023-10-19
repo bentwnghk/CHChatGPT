@@ -78,7 +78,7 @@ LOCAL_MODELS = [
     "midjourney",
     "讯飞星火大模型V2.0",
     "讯飞星火大模型V1.5",
-    "Claude"
+    "Claude",
 ]
 
 LOCAL_MODELS = [
