@@ -119,6 +119,9 @@ def get_model(
         elif model_type == ModelType.Claude:
             from .Claude import Claude_Client
             model = Claude_Client(model_name="claude-2", api_secret=os.getenv("CLAUDE_API_SECRET"))
+        elif model_type == ModelType.Qwen:
+            from .Qwen import Qwen_Client
+            model = Qwen_Client(model_name, user_name=user_name)
         elif model_type == ModelType.Unknown:
             raise ValueError(f"未知模型: {model_name}")
         logging.info(msg)
