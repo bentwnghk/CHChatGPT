@@ -76,6 +76,7 @@ LOCAL_MODELS = [
     "yuanai-1.0-rhythm_poems",
     "minimax-abab5-chat",
     "midjourney",
+    "讯飞星火大模型V3.0",
     "讯飞星火大模型V2.0",
     "讯飞星火大模型V1.5",
     "Claude",
