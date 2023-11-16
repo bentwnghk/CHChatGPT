@@ -373,8 +373,9 @@ class BaseLLMModel:
             msg = "索引获取成功，生成回答中……"
             logging.info(msg)
             with retrieve_proxy():
-                retriever = VectorStoreRetriever(vectorstore=index, search_type="similarity_score_threshold", search_kwargs={
-                                                 "k": 6, "score_threshold": 0.5})
+                retriever = VectorStoreRetriever(vectorstore=index, search_type="similarity", search_kwargs={"k": 6})
+                # retriever = VectorStoreRetriever(vectorstore=index, search_type="similarity_score_threshold", search_kwargs={
+                #                                  "k": 6, "score_threshold": 0.2})
                 try:
                     relevant_documents = retriever.get_relevant_documents(
                         fake_inputs)
@@ -787,7 +788,7 @@ class BaseLLMModel:
                     logging.info(new_history)
             except:
                 pass
-            if len(json_s["chatbot"]) < len(json_s["history"]):
+            if len(json_s["chatbot"]) < len(json_s["history"])//2:
                 logging.info("Trimming corrupted history...")
                 json_s["history"] = json_s["history"][-len(json_s["chatbot"]):]
                 logging.info(f"Trimmed history: {json_s['history']}")
