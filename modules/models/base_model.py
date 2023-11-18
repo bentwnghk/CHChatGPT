@@ -148,6 +148,7 @@ class ModelType(Enum):
     Claude = 14
     Qwen = 15
     OpenAIVision = 16
+    ERNIE = 17
 
     @classmethod
     def get_type(cls, model_name: str):
@@ -188,6 +189,8 @@ class ModelType(Enum):
             model_type = ModelType.Claude
         elif "qwen" in model_name_lower:
             model_type = ModelType.Qwen
+        elif "ernie" in model_name_lower:
+            model_type = ModelType.ERNIE
         else:
             model_type = ModelType.LLaMA
         return model_type
@@ -811,8 +814,10 @@ class BaseLLMModel:
             history_file_path = os.path.join(HISTORY_DIR, user_name, filename)
         else:
             history_file_path = filename
+        md_history_file_path = history_file_path[:-5] + ".md"
         try:
             os.remove(history_file_path)
+            os.remove(md_history_file_path)
             return i18n("删除对话历史成功"), get_history_list(user_name), []
         except:
             logging.info(f"删除对话历史失败 {history_file_path}")
