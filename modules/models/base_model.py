@@ -21,7 +21,7 @@ import aiohttp
 from enum import Enum
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.callbacks.manager import BaseCallbackManager
+from langchain.callbacks.base import BaseCallbackManager
 
 from typing import Any, Dict, List, Optional, Union
 
@@ -153,6 +153,7 @@ class ModelType(Enum):
     Qwen = 15
     OpenAIVision = 16
     ERNIE = 17
+    DALLE3 = 18
 
     @classmethod
     def get_type(cls, model_name: str):
@@ -195,6 +196,8 @@ class ModelType(Enum):
             model_type = ModelType.Qwen
         elif "ernie" in model_name_lower:
             model_type = ModelType.ERNIE
+        elif "dall" in model_name_lower:
+            model_type = ModelType.DALLE3
         else:
             model_type = ModelType.LLaMA
         return model_type
@@ -876,7 +879,7 @@ class BaseLLMModel:
             if type(user_question) == list:
                 user_question = user_question[0]["text"]
             filename = replace_special_symbols(user_question)[:16] + ".json"
-            return self.rename_chat_history(filename, chatbot, self.user_name)
+            return self.rename_chat_history(filename, chatbot)
         else:
             return gr.update()
 
