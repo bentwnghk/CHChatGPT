@@ -67,6 +67,8 @@ LOCAL_MODELS = [
     "川虎助理",
     "川虎助理 Pro",
     "DALL-E 3",
+    "Gemini Pro",
+    "Gemini Pro Vision",
     "GooglePaLM",
     "xmchat",
     "Azure OpenAI",
@@ -172,6 +174,14 @@ MODEL_METADATA = {
         "model_name": "ERNIE-Bot-4",
         "token_limit": 1024,
     },
+    "Gemini Pro": {
+        "model_name": "gemini-pro",
+        "token_limit": 30720,
+    },
+    "Gemini Pro Vision": {
+        "model_name": "gemini-pro-vision",
+        "token_limit": 30720,
+    }
 }
 
 if os.environ.get('HIDE_LOCAL_MODELS', 'false') == 'true':
