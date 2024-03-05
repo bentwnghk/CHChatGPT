@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import pathlib
+import base64
 import shutil
 import sys
 import traceback
@@ -13,6 +14,8 @@ from enum import Enum
 from itertools import islice
 from threading import Condition, Thread
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+import PIL
+from io import BytesIO
 
 import aiohttp
 import colorama
@@ -254,11 +257,20 @@ class BaseLLMModel:
     ) -> None:
         self.history = []
         self.all_token_counts = []
+        self.model_type = ModelType.get_type(model_name)
         try:
             self.model_name = MODEL_METADATA[model_name]["model_name"]
         except:
             self.model_name = model_name
-        self.model_type = ModelType.get_type(model_name)
+        try:
+            self.multimodal = MODEL_METADATA[model_name]["multimodal"]
+        except:
+            self.multimodal = False
+        if max_generation_token is None:
+            try:
+                max_generation_token = MODEL_METADATA[model_name]["max_generation"]
+            except:
+                pass
         try:
             self.token_upper_limit = MODEL_METADATA[model_name]["token_limit"]
         except KeyError:
@@ -389,15 +401,33 @@ class BaseLLMModel:
     def handle_file_upload(self, files, chatbot, language):
         """if the model accepts multi modal input, implement this function"""
         status = gr.Markdown.update()
+        image_files = []
+        other_files = []
         if files:
-            try:
-                construct_index(self.api_key, file_src=files)
-                status = i18n("索引构建完成")
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                status = i18n("索引构建失败！") + str(e)
-        return gr.Files.update(), chatbot, status
+            for f in files:
+                if f.name.endswith(IMAGE_FORMATS):
+                    image_files.append(f)
+                else:
+                    other_files.append(f)
+            if self.multimodal:
+                if image_files:
+                    chatbot.extend([(((image.name, None)), None) for image in image_files])
+                    self.history.extend([construct_image(image.name) for image in image_files])
+            else:
+                gr.Warning(i18n("该模型不支持多模态输入"))
+            if other_files:
+                try:
+                    construct_index(self.api_key, file_src=files)
+                    status = i18n("索引构建完成")
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                    status = i18n("索引构建失败！") + str(e)
+        if other_files:
+            other_files = [f.name for f in other_files]
+        else:
+            other_files = None
+        return gr.File.update(value=other_files), chatbot, status
 
     def summarize_index(self, files, chatbot, language):
         status = gr.Markdown.update()
@@ -1095,6 +1125,24 @@ class BaseLLMModel:
         import torch
         gc.collect()
         torch.cuda.empty_cache()
+
+    def get_base64_image(self, image_path):
+        if image_path.endswith(DIRECTLY_SUPPORTED_IMAGE_FORMATS):
+            with open(image_path, "rb") as f:
+                return base64.b64encode(f.read()).decode("utf-8")
+        else:
+            # convert to jpeg
+            image = PIL.Image.open(image_path)
+            image = image.convert("RGB")
+            buffer = BytesIO()
+            image.save(buffer, format="JPEG")
+            return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    def get_image_type(self, image_path):
+        if image_path.lower().endswith(DIRECTLY_SUPPORTED_IMAGE_FORMATS):
+            return os.path.splitext(image_path)[1][1:].lower()
+        else:
+            return "jpeg"
 
 
 class Base_Chat_Langchain_Client(BaseLLMModel):

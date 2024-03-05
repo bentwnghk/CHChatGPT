@@ -85,7 +85,8 @@ LOCAL_MODELS = [
     "讯飞星火大模型V3.0",
     "讯飞星火大模型V2.0",
     "讯飞星火大模型V1.5",
-    "Claude",
+    "Claude 3 Sonnet",
+    "Claude 3 Opus",
     "ERNIE-Bot-turbo",
     "ERNIE-Bot",
     "ERNIE-Bot-4",
@@ -162,10 +163,23 @@ MODEL_METADATA = {
     "GPT4 Vision": {
         "model_name": "gpt-4-vision-preview",
         "token_limit": 128000,
+        "multimodal": True
     },
     "Claude": {
         "model_name": "Claude",
         "token_limit": 4096,
+    },
+    "Claude 3 Sonnet": {
+        "model_name": "claude-3-sonnet-20240229",
+        "token_limit": 200000,
+        "max_generation": 4096,
+        "multimodal": True
+    },
+    "Claude 3 Opus": {
+        "model_name": "claude-3-opus-20240229",
+        "token_limit": 200000,
+        "max_generation": 4096,
+        "multimodal": True
     },
     "ERNIE-Bot-turbo": {
         "model_name": "ERNIE-Bot-turbo",
@@ -245,6 +259,9 @@ HISTORY_NAME_METHODS = [
     i18n("第一条提问"),
     i18n("模型自动总结（消耗tokens）"),
 ]
+
+DIRECTLY_SUPPORTED_IMAGE_FORMATS = (".png", ".jpeg", ".gif", ".webp") # image types that can be directly uploaded, other formats will be converted to jpeg
+IMAGE_FORMATS = DIRECTLY_SUPPORTED_IMAGE_FORMATS + (".jpg", ".bmp", "heic", "heif") # all supported image formats
 
 
 WEBSEARCH_PTOMPT_TEMPLATE = """\
