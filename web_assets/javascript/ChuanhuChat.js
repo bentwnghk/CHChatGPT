@@ -15,6 +15,7 @@ var chatbotArea = null;
 var chatbot = null;
 var chatbotIndicator = null;
 var uploaderIndicator = null;
+var uploaderIndicator2 = null;
 var chatListIndicator = null;
 var chatbotWrap = null;
 var apSwitch = null;
@@ -24,7 +25,7 @@ var logginUser = null;
 var updateToast = null;
 var sendBtn = null;
 var cancelBtn = null;
-var sliders = null;
+// var sliders = null;
 var updateChuanhuBtn = null;
 var rebootChuanhuBtn = null;
 var statusDisplay = null;
@@ -48,7 +49,8 @@ function addInit() {
     var needInit = {chatbotIndicator, uploaderIndicator};
 
     chatbotIndicator = gradioApp().querySelector('#chuanhu-chatbot > div.wrap');
-    uploaderIndicator = gradioApp().querySelector('#upload-index-file > div[data-testid="block-label"]');
+    uploaderIndicator = gradioApp().querySelector('#upload-index-file > div.wrap');
+    uploaderIndicator2 = gradioApp().querySelector('#upload-index-file');
     chatListIndicator = gradioApp().querySelector('#history-select-dropdown > div.wrap');
 
     for (let elem in needInit) {
@@ -76,12 +78,12 @@ function initialize() {
     appTitleDiv = gradioApp().getElementById("app-title");
     chatbotArea = gradioApp().querySelector('#chatbot-area');
     chatbot = gradioApp().querySelector('#chuanhu-chatbot');
-    chatbotWrap = gradioApp().querySelector('#chuanhu-chatbot > .wrapper > .wrap');
+    chatbotWrap = gradioApp().querySelector('#chuanhu-chatbot > .wrapper > .bubble-wrap');
     apSwitch = gradioApp().querySelector('.apSwitch input[type="checkbox"]');
     updateToast = gradioApp().querySelector("#toast-update");
     sendBtn = gradioApp().getElementById("submit-btn");
     cancelBtn = gradioApp().getElementById("cancel-btn");
-    sliders = gradioApp().querySelectorAll('input[type="range"]');
+    // sliders = gradioApp().querySelectorAll('input[type="range"]');
     updateChuanhuBtn = gradioApp().getElementById("update-chuanhu-btn");
     rebootChuanhuBtn = gradioApp().getElementById("reboot-chuanhu-btn");
     statusDisplay = gradioApp().querySelector('#status-display');
@@ -109,7 +111,7 @@ function initialize() {
     selectHistory();
     // setChatbotHeight();
     setPopupBoxPosition();
-    setSlider();
+    // setSlider();
     setCheckboxes();
     setAutocomplete();
     checkModel();
@@ -270,7 +272,7 @@ function btnToggleDarkMode() {
 }
 
 function setScrollShadow() {
-    const toolboxScroll = toolbox.querySelector('#toolbox-area > .gradio-box > .gradio-tabs > div.tab-nav');
+    const toolboxScroll = toolbox.querySelector('#toolbox-area > .gradio-group > div.styler > .gradio-tabs > div.tab-nav');
     const toolboxTabs = toolboxScroll.querySelectorAll('button');
     let toolboxScrollWidth = 0;
     toolboxTabs.forEach((tab) => {
@@ -352,12 +354,13 @@ function clearChatbot(a, b) {
 }
 
 function chatbotContentChanged(attempt = 1, force = false) {
+    // console.log('chatbotContentChanged');
     for (var i = 0; i < attempt; i++) {
         setTimeout(() => {
             // clearMessageRows();
             saveHistoryHtml();
             disableSendBtn();
-            updateSlider();
+            // updateSlider();
             updateCheckboxes();
             bindFancyBox();
 
@@ -370,7 +373,7 @@ function chatbotContentChanged(attempt = 1, force = false) {
 
             if (!chatbotIndicator.classList.contains('translucent')) { // message deleted
                 var checkLatestAdded = setInterval(() => {
-                    var latestMessageNow = gradioApp().querySelector('#chuanhu-chatbot > .wrapper > .wrap > .message-wrap .message.bot.latest');
+                    var latestMessageNow = gradioApp().querySelector('#chuanhu-chatbot .message-wrap .message.bot:last-of-type');
                     if (latestMessageNow && latestMessageNow.querySelector('.message-btn-row')) {
                         clearInterval(checkLatestAdded);
                     } else {
@@ -465,7 +468,7 @@ let ChuanhuInfo = function () {
  */
 }
 let description = `
-© 2023 Chuanhu, MZhao, Keldos
+© 2023 - 2024 Chuanhu, MZhao, Keldos
 GitHub repository: [https://github.com/GaiZhenbiao/ChuanhuChatGPT]\n
 Enjoy our project!\n
 `

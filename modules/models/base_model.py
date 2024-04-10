@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import time
 import logging
 import os
 import shutil
@@ -60,14 +61,12 @@ class CallbackToIterator:
             self.cond.notify()  # Wake up the generator if it's waiting.
 
 
-def get_action_description(text):
-    match = re.search("```(.*?)```", text, re.S)
-    json_text = match.group(1)
-    # 把json转化为python字典
-    json_dict = json.loads(json_text)
-    # 提取'action'和'action_input'的值
-    action_name = json_dict["action"]
-    action_input = json_dict["action_input"]
+def get_action_description(action):
+    action_name = action.tool
+    action_name = " ".join(action_name.split("_")).title()
+    action_input = action.tool_input
+    if isinstance(action_input, dict):
+        action_input = " ".join(action_input.values())
     if action_name != "Final Answer":
         return f'<!-- S O PREFIX --><p class="agent-prefix">{action_name}: {action_input}\n</p><!-- E O PREFIX -->'
     else:
@@ -82,7 +81,7 @@ class ChuanhuCallbackHandler(BaseCallbackHandler):
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
-        self.callback(get_action_description(action.log))
+        self.callback(get_action_description(action))
 
     def on_tool_end(
         self,
@@ -392,7 +391,7 @@ class BaseLLMModel:
 
     def handle_file_upload(self, files, chatbot, language):
         """if the model accepts multi modal input, implement this function"""
-        status = gr.Markdown.update()
+        status = gr.Markdown()
         image_files = []
         other_files = []
         if files:
@@ -419,10 +418,10 @@ class BaseLLMModel:
             other_files = [f.name for f in other_files]
         else:
             other_files = None
-        return gr.File.update(value=other_files), chatbot, status
+        return gr.File(value=other_files), chatbot, status
 
     def summarize_index(self, files, chatbot, language):
-        status = gr.Markdown.update()
+        status = gr.Markdown()
         if files:
             index = construct_index(self.api_key, file_src=files)
             status = i18n("总结完成")
@@ -872,7 +871,7 @@ class BaseLLMModel:
         return (
             [],
             self.token_message([0]),
-            gr.Radio.update(choices=choices, value=history_name),
+            gr.Radio(choices=choices, value=history_name),
             system_prompt,
             self.single_turn,
             self.temperature,

@@ -35,6 +35,7 @@ function setUploader() {
         }
     });
     uploaderObserver.observe(uploaderIndicator, {attributes: true})
+    uploaderObserver.observe(uploaderIndicator2, {attributes: true})
 }
 var grUploader;
 var chatbotUploader;
