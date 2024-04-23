@@ -155,6 +155,7 @@ class ModelType(Enum):
     GoogleGemini = 19
     GoogleGemma = 20
     Ollama = 21
+    Groq = 22
 
     @classmethod
     def get_type(cls, model_name: str):
@@ -173,6 +174,8 @@ class ModelType(Enum):
                     model_type = ModelType.OpenAI
         elif "chatglm" in model_name_lower:
             model_type = ModelType.ChatGLM
+        elif "groq" in model_name_lower:
+            model_type = ModelType.Groq
         elif "ollama" in model_name_lower:
             model_type = ModelType.Ollama
         elif "llama" in model_name_lower or "alpaca" in model_name_lower:
@@ -867,7 +870,7 @@ class BaseLLMModel:
         choices = get_history_names(self.user_name)
         if history_name not in choices:
             choices.insert(0, history_name)
-        system_prompt = self.system_prompt if remain_system_prompt else ""
+        system_prompt = self.system_prompt if remain_system_prompt else INITIAL_SYSTEM_PROMPT
 
         self.single_turn = self.default_single_turn
         self.temperature = self.default_temperature
