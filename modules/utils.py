@@ -1412,7 +1412,75 @@ def setup_wizard():
         print(colorama.Back.GREEN + i18n("设置完成。现在请重启本程序。") + colorama.Style.RESET_ALL)
         exit()
 
+
 def reboot_chuanhu():
     import sys
     print(colorama.Back.GREEN + i18n("正在尝试重启...") + colorama.Style.RESET_ALL)
     os.execl(sys.executable, sys.executable, *sys.argv)
+
+
+from .models.base_model import BaseLLMModel
+def setPlaceholder(model_name: str | None = "", model: BaseLLMModel | None = None):
+    from .webui import get_html
+    logo_class, slogan_class, question_class = "", "", ""
+    model_logo, model_logo_round, model_slogan, model_question_1, model_question_2, model_question_3, model_question_4 = "", "", "", "", "", "", ""
+
+    if model is None:
+        try:
+            model_logo = MODEL_METADATA[model_name]["placeholder"]["logo"]
+        except:
+            logo_class = "hideK"
+        try:
+            model_logo_round = MODEL_METADATA[model_name]["placeholder"]["logo_rounded"]
+        except:
+            pass
+        try:
+            model_slogan = i18n(MODEL_METADATA[model_name]["placeholder"]["slogan"])
+        except:
+            slogan_class = "hideK"
+        try:
+            model_question_1 = i18n(MODEL_METADATA[model_name]["placeholder"]["question_1"])
+            model_question_2 = i18n(MODEL_METADATA[model_name]["placeholder"]["question_2"])
+            model_question_3 = i18n(MODEL_METADATA[model_name]["placeholder"]["question_3"])
+            model_question_4 = i18n(MODEL_METADATA[model_name]["placeholder"]["question_4"])
+        except:
+            question_class = "hideK"
+    else:
+        try:
+            model_logo = model.placeholder["logo"]
+        except:
+            logo_class = "hideK"
+        try:
+            model_logo_round = model.placeholder["logo_rounded"]
+        except:
+            pass
+        try:
+            model_slogan = i18n(model.placeholder["slogan"])
+        except:
+            slogan_class = "hideK"
+        try:
+            model_question_1 = i18n(model.placeholder["question_1"])
+            model_question_2 = i18n(model.placeholder["question_2"])
+            model_question_3 = i18n(model.placeholder["question_3"])
+            model_question_4 = i18n(model.placeholder["question_4"])
+        except:
+            question_class = "hideK"
+
+    if logo_class == "hideK" and slogan_class == "hideK" and question_class == "hideK":
+        return ""
+    else:
+        # 除非明确指定为 squared 或 false 等，否则默认为圆角
+        if model_logo_round.lower().strip() not in ["square", "squared", "false", "0", "no", "off"]:
+            logo_class += " rounded"
+        return get_html("chatbot_placeholder.html").format(
+            chatbot_ph_logo = model_logo,
+            chatbot_ph_slogan = model_slogan,
+            chatbot_ph_question_1 = model_question_1,
+            chatbot_ph_question_2 = model_question_2,
+            chatbot_ph_question_3 = model_question_3,
+            chatbot_ph_question_4 = model_question_4,
+            chatbot_ph_logo_class = logo_class,
+            chatbot_ph_slogan_class = slogan_class,
+            chatbot_ph_question_class = question_class
+        )
+

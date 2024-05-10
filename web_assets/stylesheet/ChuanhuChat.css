@@ -51,7 +51,7 @@ body.popup-open {
 }
 
 .hideK {
-    display: none;
+    display: none !important;
 }
 
 #app-title,
@@ -1133,6 +1133,11 @@ input:checked + .chatbot-input-more-span {
 
 .disable-update #chuanhu-manual-check-btn {
     display: none;
+}
+
+#chatbot-area {
+    container-name: chatbot-area;
+    container-type: inline-size;
 }
 
 #chatbot-area.no-menu #chatbot-header {
