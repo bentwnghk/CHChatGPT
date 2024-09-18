@@ -29,7 +29,7 @@ from langchain.schema import (AgentAction, AgentFinish, AIMessage, BaseMessage,
                               HumanMessage, SystemMessage)
 
 from .. import shared
-from ..config import retrieve_proxy
+from ..config import retrieve_proxy, auth_list
 from ..index_func import *
 from ..presets import *
 from ..utils import *
@@ -279,6 +279,7 @@ class BaseLLMModel:
         self.system_prompt = config["system"]
         self.api_key = config["api_key"]
         self.api_host = config["api_host"]
+        self.stream = config["stream"]
 
         self.interrupted = False
         self.need_api_key = self.api_key is not None
@@ -299,6 +300,7 @@ class BaseLLMModel:
         self.default_frequency_penalty = config["frequency_penalty"]
         self.default_logit_bias = config["logit_bias"]
         self.default_user_identifier = user
+        self.default_stream = config["stream"]
 
         self.single_turn = self.default_single_turn
         self.temperature = self.default_temperature
@@ -588,7 +590,6 @@ class BaseLLMModel:
         self,
         inputs,
         chatbot,
-        stream=False,
         use_websearch=False,
         files=None,
         reply_language="中文",
@@ -671,7 +672,7 @@ class BaseLLMModel:
 
         start_time = time.time()
         try:
-            if stream:
+            if self.stream:
                 logging.debug("使用流式传输")
                 iter = self.stream_next_chatbot(
                     inputs,
@@ -732,7 +733,6 @@ class BaseLLMModel:
     def retry(
         self,
         chatbot,
-        stream=False,
         use_websearch=False,
         files=None,
         reply_language="中文",
@@ -758,7 +758,7 @@ class BaseLLMModel:
         iter = self.predict(
             inputs,
             chatbot,
-            stream=stream,
+            stream=self.stream,
             use_websearch=use_websearch,
             files=files,
             reply_language=reply_language,
@@ -861,6 +861,10 @@ class BaseLLMModel:
         self.single_turn = new_single_turn
         self.auto_save()
 
+    def set_streaming(self, new_streaming):
+        self.stream = new_streaming
+        self.auto_save()
+
     def reset(self, remain_system_prompt=False):
         self.history = []
         self.all_token_counts = []
@@ -882,6 +886,7 @@ class BaseLLMModel:
         self.frequency_penalty = self.default_frequency_penalty
         self.logit_bias = self.default_logit_bias
         self.user_identifier = self.default_user_identifier
+        self.stream = self.default_stream
 
         return (
             [],
@@ -899,6 +904,7 @@ class BaseLLMModel:
             self.frequency_penalty,
             self.logit_bias,
             self.user_identifier,
+            self.stream
         )
 
     def delete_first_conversation(self):
@@ -955,7 +961,7 @@ class BaseLLMModel:
         filename = os.path.basename(full_path)
 
         self.history_file_path = filename
-        save_file(filename, self, chatbot)
+        save_file(filename, self)
         return init_history_list(self.user_name)
 
     def auto_name_chat_history(
@@ -972,14 +978,14 @@ class BaseLLMModel:
 
     def auto_save(self, chatbot=None):
         if chatbot is not None:
-            save_file(self.history_file_path, self, chatbot)
+            save_file(self.history_file_path, self)
 
     def export_markdown(self, filename, chatbot):
         if filename == "":
             return
         if not filename.endswith(".md"):
             filename += ".md"
-        save_file(filename, self, chatbot)
+        save_file(filename, self)
 
     def load_chat_history(self, new_history_file_path=None):
         logging.debug(f"{self.user_name} 加载对话历史中……")
@@ -987,6 +993,11 @@ class BaseLLMModel:
             if type(new_history_file_path) != str:
                 # copy file from new_history_file_path.name to os.path.join(HISTORY_DIR, self.user_name)
                 new_history_file_path = new_history_file_path.name
+                target_path = os.path.join(HISTORY_DIR, self.user_name, new_history_file_path)
+                # Check if the file is in the history directory
+                assert os.path.realpath(new_history_file_path).startswith(os.path.realpath(HISTORY_DIR))
+                assert os.path.realpath(target_path).startswith(os.path.realpath(HISTORY_DIR))
+                assert self.user_name in [i[0] for i in auth_list]
                 shutil.copyfile(
                     new_history_file_path,
                     os.path.join(
@@ -1028,6 +1039,8 @@ class BaseLLMModel:
                     -len(saved_json["chatbot"]) :
                 ]
                 logging.info(f"Trimmed history: {saved_json['history']}")
+            # Sanitize chatbot
+            saved_json["chatbot"] = remove_html_tags(saved_json["chatbot"])
             logging.debug(f"{self.user_name} 加载对话历史完毕")
             self.history = saved_json["history"]
             self.single_turn = saved_json.get("single_turn", self.single_turn)
@@ -1050,6 +1063,7 @@ class BaseLLMModel:
             self.logit_bias = saved_json.get("logit_bias", self.logit_bias)
             self.user_identifier = saved_json.get("user_identifier", self.user_name)
             self.metadata = saved_json.get("metadata", self.metadata)
+            self.stream = saved_json.get("stream", self.stream)
             self.chatbot = saved_json["chatbot"]
             return (
                 os.path.basename(self.history_file_path)[:-5],
@@ -1066,10 +1080,11 @@ class BaseLLMModel:
                 self.frequency_penalty,
                 self.logit_bias,
                 self.user_identifier,
+                self.stream
             )
         except:
             # 没有对话历史或者对话历史解析失败
-            logging.info(f"没有找到对话历史记录 {self.history_file_path}")
+            logging.debug(f"没有找到对话历史记录 {self.history_file_path}")
             self.reset()
             return (
                 os.path.basename(self.history_file_path),
@@ -1086,6 +1101,7 @@ class BaseLLMModel:
                 self.frequency_penalty,
                 self.logit_bias,
                 self.user_identifier,
+                self.stream
             )
 
     def delete_chat_history(self, filename):
@@ -1100,6 +1116,13 @@ class BaseLLMModel:
         else:
             history_file_path = filename
         md_history_file_path = history_file_path[:-5] + ".md"
+        # check if history file path matches user_name
+        # if user access control is not enabled, user_name is empty, don't check
+        assert os.path.basename(os.path.dirname(history_file_path)) == self.user_name or self.user_name == ""
+        assert os.path.basename(os.path.dirname(md_history_file_path)) == self.user_name or self.user_name == ""
+        # check if history file path is in history directory
+        assert os.path.realpath(history_file_path).startswith(os.path.realpath(HISTORY_DIR))
+        assert os.path.realpath(md_history_file_path).startswith(os.path.realpath(HISTORY_DIR))
         try:
             os.remove(history_file_path)
             os.remove(md_history_file_path)

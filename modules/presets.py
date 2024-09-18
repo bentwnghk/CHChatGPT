@@ -59,7 +59,8 @@ ONLINE_MODELS = [
     "GPT4 Turbo",
     "GPT3.5 Turbo Instruct",
     "GPT4",
-    "GPT4 32K",
+    "o1-preview",
+    "o1-mini",
     "Claude 3 Haiku",
     "Claude 3.5 Sonnet",
     "Claude 3 Opus",
@@ -141,6 +142,7 @@ DEFAULT_METADATA = {
     "presence_penalty": 0.0,
     "frequency_penalty": 0.0,
     "logit_bias": None,
+    "stream": True,
     "metadata": {} # additional metadata for the model
 }
 
@@ -254,6 +256,30 @@ MODEL_METADATA = {
         "description": "gpt4omini_description",
         "token_limit": 128000,
         "multimodal": True,
+        "placeholder": {
+            "logo": "file=web_assets/model_logos/openai-black.webp",
+            "slogan": i18n("gpt_default_slogan"),
+        }
+    },
+    "o1-preview": {
+        "model_name": "o1-preview",
+        "description": "o1_description",
+        "token_limit": 128000,
+        "multimodal": False,
+        "model_type": "OpenAIVision",
+        "stream": False,
+        "placeholder": {
+            "logo": "file=web_assets/model_logos/openai-black.webp",
+            "slogan": i18n("gpt_default_slogan"),
+        }
+    },
+    "o1-mini": {
+        "model_name": "o1-mini",
+        "description": "o1_description",
+        "token_limit": 128000,
+        "multimodal": False,
+        "model_type": "OpenAIVision",
+        "stream": False,
         "placeholder": {
             "logo": "file=web_assets/model_logos/openai-black.webp",
             "slogan": i18n("gpt_default_slogan"),
