@@ -27,7 +27,7 @@ import colorama
 
 from modules.presets import *
 from . import shared
-from modules.config import retrieve_proxy, hide_history_when_not_logged_in
+from modules.config import retrieve_proxy, hide_history_when_not_logged_in, admin_list
 
 if TYPE_CHECKING:
     from typing import TypedDict
@@ -99,7 +99,7 @@ def export_markdown(current_model, *args):
 
 
 def upload_chat_history(current_model, *args):
-    return current_model.load_chat_history(*args)
+    return current_model.upload_chat_history(*args)
 
 
 def set_token_upper_limit(current_model, *args):
@@ -245,13 +245,27 @@ def convert_mdtext(md_text):  # deprecated
 
 def remove_html_tags(data):
     def clean_text(text):
-        # Remove all HTML tags
-        cleaned = re.sub(r'<[^>]+>', '', text)
-        # Remove any remaining HTML entities
-        cleaned = re.sub(r'&[#\w]+;', '', cleaned)
-        # Remove extra whitespace and newlines
-        cleaned = re.sub(r'\s+', ' ', cleaned)
-        return cleaned.strip()
+        # Regular expression to match code blocks, including all newlines
+        code_block_pattern = r'(```[\s\S]*?```)'
+
+        # Split the text into code blocks and non-code blocks
+        parts = re.split(code_block_pattern, text)
+
+        cleaned_parts = []
+        for part in parts:
+            if part.startswith('```') and part.endswith('```'):
+                # This is a code block, keep it exactly as is
+                cleaned_parts.append(part)
+            else:
+                # This is not a code block, remove HTML tags
+                # Remove all HTML tags
+                cleaned = re.sub(r'<[^>]+>', '', part)
+                # Remove any remaining HTML entities
+                cleaned = re.sub(r'&[#\w]+;', '', cleaned)
+                cleaned_parts.append(cleaned)  # Don't strip here to preserve newlines
+
+        # Join the cleaned parts back together
+        return ''.join(cleaned_parts)
 
     return [
         [clean_text(item) for item in sublist]
@@ -727,7 +741,9 @@ def transfer_input(inputs):
     )
 
 
-def update_chuanhu():
+def update_chuanhu(username):
+    if username not in admin_list:
+        return gr.Markdown(value=i18n("no_permission_to_update_description"))
     from .repo import background_update
 
     print("[Updater] Trying to update...")
